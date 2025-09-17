@@ -6,7 +6,7 @@
     <title>Dashboard - Thymeleaf Authentication</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
     <style>
         body {
             background-color: #f8f9fa;
@@ -2542,6 +2542,16 @@
 
         // Load dashboard charts when dashboard content is shown
         function loadDashboardCharts() {
+            // Check if Chart.js is available
+            if (typeof Chart === 'undefined') {
+                console.error('Chart.js library is not loaded. Retrying in 500ms...');
+                setTimeout(() => {
+                    loadDashboardCharts();
+                }, 500);
+                return;
+            }
+            
+            console.log('Chart.js is available, loading charts...');
             loadPriorityMonthChart();
             loadPriorityYearChart();
             loadPriority5TrendChart();
@@ -2550,6 +2560,13 @@
         // Load Priority Month Chart
         function loadPriorityMonthChart() {
             console.log('Loading Priority Month Chart...');
+            
+            // Double-check Chart.js availability
+            if (typeof Chart === 'undefined') {
+                console.error('Chart.js not available in loadPriorityMonthChart');
+                return;
+            }
+            
             fetch('/api/incidents/charts/priority-month', {
                 method: 'POST',
                 headers: {
@@ -2618,6 +2635,13 @@
         // Load Priority Year Chart
         function loadPriorityYearChart() {
             console.log('Loading Priority Year Chart...');
+            
+            // Double-check Chart.js availability
+            if (typeof Chart === 'undefined') {
+                console.error('Chart.js not available in loadPriorityYearChart');
+                return;
+            }
+            
             fetch('/api/incidents/charts/priority-year', {
                 method: 'POST',
                 headers: {
@@ -2686,6 +2710,13 @@
         // Load Priority 5 Trend Chart
         function loadPriority5TrendChart() {
             console.log('Loading Priority 5 Trend Chart...');
+            
+            // Double-check Chart.js availability
+            if (typeof Chart === 'undefined') {
+                console.error('Chart.js not available in loadPriority5TrendChart');
+                return;
+            }
+            
             fetch('/api/incidents/charts/priority5-trend', {
                 method: 'POST',
                 headers: {
