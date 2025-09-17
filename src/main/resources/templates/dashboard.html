@@ -1,0 +1,3652 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Thymeleaf Authentication</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            background-color: #f8f9fa;
+            overflow-x: hidden; /* Hide horizontal scrollbar */
+        }
+        .navbar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000; /* Higher than sidebar */
+            position: relative;
+        }
+        .navbar-brand, .navbar-nav .nav-link {
+            color: white !important;
+        }
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        .card-header {
+            background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+            color: white;
+            border-radius: 15px 15px 0 0 !important;
+            border: none;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+            border: none;
+            border-radius: 10px;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        .token-display {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 10px;
+            font-family: monospace;
+            word-break: break-all;
+        }
+        .incident-card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            margin-bottom: 1rem;
+        }
+        .incident-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
+        }
+        .incident-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 12px 12px 0 0;
+            padding: 1rem;
+        }
+        .status-badge {
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+        }
+        .priority-high { background-color: #dc3545; color: white; }
+        .priority-medium { background-color: #ffc107; color: #212529; }
+        .priority-4 { background-color: #28a745; color: white; }
+        .status-open { background-color: #dc3545; color: white; }
+        .status-in-progress { background-color: #ffc107; color: #212529; }
+        .status-waiting { background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%); color: white; }
+        .status-resolved { background-color: #28a745; color: white; }
+        .status-closed { background: linear-gradient(135deg, #6c757d 0%, #495057 100%); color: white; }
+        
+        /* Custom hover effect for rounded buttons */
+        .custom-hover-btn {
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+        
+        .custom-hover-btn:hover {
+            border: 2px solid white !important;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+            transform: translateY(-1px);
+        }
+        
+        .stats-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+        }
+        .stats-number {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        .stats-card {
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .stats-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        }
+        .stats-card.active {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+        }
+        .status-waiting { background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%); }
+        .status-closed { background: linear-gradient(135deg, #6c757d 0%, #495057 100%); }
+        .ageing-0-1 { background: linear-gradient(135deg, #28a745 0%, #20c997 100%); }
+        .ageing-2-3 { background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%); }
+        .ageing-4-7 { background: linear-gradient(135deg, #fd7e14 0%, #dc3545 100%); }
+        .ageing-7plus { background: linear-gradient(135deg, #dc3545 0%, #6f42c1 100%); }
+        .priority-1 { background-color: #dc3545; color: white; }
+        .priority-2 { background-color: #fd7e14; color: white; }
+        .priority-3 { background-color: #ffc107; color: #212529; }
+        .priority-4 { background-color: #28a745; color: white; }
+        .incident-row { 
+            cursor: pointer; 
+            transition: all 0.2s ease;
+        }
+        .incident-row:hover { 
+            background-color: #f3e5f5 !important; 
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(156, 39, 176, 0.15);
+        }
+
+        /* Sortable table headers */
+        .sortable {
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+            background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+            color: white;
+        }
+        
+        .sortable:hover {
+            background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+        }
+        
+        .sortable.sorted {
+            background: linear-gradient(135deg, #1565c0 0%, #0d47a1 100%);
+        }
+        
+        .sortable.sorted:hover {
+            background: linear-gradient(135deg, #0d47a1 0%, #0277bd 100%);
+        }
+        
+        .sort-icon {
+            margin-left: 0.5rem;
+            opacity: 0.8;
+            transition: all 0.3s ease;
+            color: white;
+        }
+        
+        .sortable:hover .sort-icon {
+            opacity: 1;
+        }
+        
+        .sortable.sorted .sort-icon {
+            opacity: 1;
+            color: white;
+        }
+        
+        .sortable.sorted-asc .sort-icon::before {
+            content: "\f0de"; /* fa-sort-up */
+        }
+        
+        .sortable.sorted-desc .sort-icon::before {
+            content: "\f0dd"; /* fa-sort-down */
+        }
+        
+        /* Actions column styling */
+        th.sortable:last-child {
+            background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%) !important;
+            color: white !important;
+        }
+        
+        th.sortable:last-child:hover {
+            background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%) !important;
+        }
+        
+        /* Enhanced button hover effects */
+        .btn {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .btn-outline-primary:hover {
+            background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+            border-color: #1976d2;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(33, 150, 243, 0.4);
+        }
+        
+        /* Radio button group styling */
+        .btn-outline-primary {
+            background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+            border-color: #1976d2;
+            color: white;
+            font-weight: 500;
+        }
+        
+        .btn-check:checked + .btn-outline-primary {
+            background: white;
+            border-color: #2196f3;
+            color: #2196f3;
+        }
+        
+        .btn-check:checked + .btn-outline-primary:hover {
+            background: #f8f9fa;
+            border-color: #1976d2;
+            color: #1976d2;
+        }
+        
+        .btn-outline-primary:hover {
+            background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+            border-color: #1565c0;
+        }
+        
+        .btn-secondary:hover {
+            background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
+        }
+        
+        .btn-success:hover {
+            background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+        }
+        
+        .btn-danger:hover {
+            background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(244, 67, 54, 0.3);
+        }
+        
+        .btn-warning:hover {
+            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 152, 0, 0.3);
+        }
+        
+        .btn-info:hover {
+            background: linear-gradient(135deg, #00bcd4 0%, #0097a7 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 188, 212, 0.3);
+        }
+        
+        /* Enhanced form control hover effects */
+        .form-control:hover {
+            border-color: #9c27b0;
+            box-shadow: 0 0 0 0.2rem rgba(156, 39, 176, 0.15);
+        }
+        
+        .form-control:focus {
+            border-color: #9c27b0;
+            box-shadow: 0 0 0 0.2rem rgba(156, 39, 176, 0.25);
+        }
+        
+        .form-select:hover {
+            border-color: #9c27b0;
+            box-shadow: 0 0 0 0.2rem rgba(156, 39, 176, 0.15);
+        }
+        
+        .form-select:focus {
+            border-color: #9c27b0;
+            box-shadow: 0 0 0 0.2rem rgba(156, 39, 176, 0.25);
+        }
+        
+        /* Fixed sidebar styles */
+        .sidebar-fixed {
+            position: fixed;
+            top: 0; /* Start at the same level as header */
+            left: 0;
+            height: 100vh; /* Full height */
+            overflow-y: auto;
+            overflow-x: hidden; /* Hide horizontal scrollbar */
+            z-index: 999; /* Lower than navbar to stay behind it */
+            width: 20%; /* Reduced width */
+            background-color: #ffffff;
+            border-right: 1px solid #e9ecef;
+            padding: 1.5rem 1.5rem;
+            transition: width 0.01s cubic-bezier(0.4, 0, 0.2, 1), padding 0.01s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .sidebar-fixed.collapsed {
+            width: 60px;
+            padding: 1.5rem 0.5rem; /* Consistent top padding */
+        }
+        
+        .main-content-fixed {
+            margin-left: 20%; /* Adjusted for new width */
+            width: 80%; /* Adjusted for new width */
+            transition: margin-left 0.25s cubic-bezier(0.4, 0, 0.2, 1), width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow-x: hidden; /* Hide horizontal scrollbar */
+        }
+        
+        .main-content-fixed.sidebar-collapsed {
+            margin-left: 60px;
+            width: calc(100% - 60px);
+        }
+        
+        /* Navbar inside main content */
+        .main-content-fixed .navbar {
+            margin-bottom: 0;
+        }
+        
+        /* Modern sidebar navigation styles */
+        .sidebar-nav {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .sidebar-nav-item {
+            margin-bottom: 0.5rem;
+        }
+        
+        .sidebar-nav-link {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            text-decoration: none;
+            color: #6c757d;
+            border-radius: 8px;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            font-weight: 500;
+        }
+        
+        .sidebar-nav-link:hover {
+            background: linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%);
+            color: white;
+            transform: translateX(8px) scale(1.02);
+            box-shadow: 0 4px 12px rgba(156, 39, 176, 0.3);
+            text-decoration: none;
+        }
+        
+        .sidebar-nav-link.active {
+            background: linear-gradient(135deg, #673ab7 0%, #512da8 100%);
+            color: white;
+            box-shadow: 0 2px 8px rgba(103, 58, 183, 0.3);
+        }
+        
+        .sidebar-nav-icon {
+            width: 20px;
+            height: 20px;
+            margin-right: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .sidebar-section-title {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin: 0;
+            line-height: 1.5;
+        }
+        
+        /* Remove card styling from sidebar */
+        .sidebar-card {
+            background: none;
+            border: none;
+            box-shadow: none;
+        }
+        
+        .sidebar-card .card-header {
+            background: none;
+            border: none;
+            padding: 0;
+            margin-bottom: 1.5rem;
+        }
+        
+        .sidebar-card .card-body {
+            padding: 0;
+        }
+        
+        /* Sidebar toggle button */
+        .sidebar-toggle {
+            background: none;
+            border: none;
+            color: #6c757d;
+            font-size: 1.1rem;
+            cursor: pointer;
+            padding: 0.4rem;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            margin-right: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 1.5rem;
+        }
+        
+        .sidebar-toggle:hover {
+            background: linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%);
+            color: white;
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(156, 39, 176, 0.3);
+        }
+        
+        .sidebar-toggle i {
+            transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        /* Enhanced count cards with light white tabs and shadows */
+        .count-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            border: 1px solid rgba(156, 39, 176, 0.1);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(156, 39, 176, 0.08);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .count-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 30px rgba(156, 39, 176, 0.15);
+            border-color: rgba(156, 39, 176, 0.2);
+        }
+        
+        .count-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #9c27b0 0%, #673ab7 50%, #9c27b0 100%);
+        }
+        
+        .count-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #9c27b0 0%, #673ab7 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 2px 4px rgba(156, 39, 176, 0.1);
+        }
+        
+        .count-label {
+            color: #6c757d;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .count-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #9c27b0;
+            font-size: 1.5rem;
+            box-shadow: 0 4px 12px rgba(156, 39, 176, 0.15);
+            transition: all 0.3s ease;
+        }
+        
+        .count-card:hover .count-icon {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(156, 39, 176, 0.25);
+        }
+        
+        .count-card.active {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border-color: rgba(33, 150, 243, 0.3);
+            box-shadow: 0 6px 25px rgba(33, 150, 243, 0.2);
+        }
+        
+        .count-card.active .count-number {
+            background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .count-card.active .count-icon {
+            background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+            color: white;
+            box-shadow: 0 6px 20px rgba(33, 150, 243, 0.3);
+        }
+        
+        /* Fixed table layout */
+        .incidents-table-container {
+            height: 500px;
+            overflow-y: auto;
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+        }
+        
+        /* Hide scrollbar for webkit browsers */
+        .incidents-table-container::-webkit-scrollbar {
+            display: none;
+        }
+        
+        /* Hide scrollbar for Firefox */
+        .incidents-table-container {
+            scrollbar-width: none;
+        }
+        
+        .incidents-table {
+            table-layout: fixed;
+            width: 100%;
+            margin-bottom: 0;
+        }
+        
+        .incidents-table th,
+        .incidents-table td {
+            padding: 0.75rem;
+            vertical-align: middle;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        /* Fixed column widths */
+        .incidents-table th:nth-child(1),
+        .incidents-table td:nth-child(1) {
+            width: 12%; /* Number */
+        }
+        
+        .incidents-table th:nth-child(2),
+        .incidents-table td:nth-child(2) {
+            width: 30%; /* Short Description */
+        }
+        
+        .incidents-table th:nth-child(3),
+        .incidents-table td:nth-child(3) {
+            width: 8%; /* Priority */
+        }
+        
+        .incidents-table th:nth-child(4),
+        .incidents-table td:nth-child(4) {
+            width: 12%; /* State */
+        }
+        
+        .incidents-table th:nth-child(5),
+        .incidents-table td:nth-child(5) {
+            width: 15%; /* Assignee */
+        }
+        
+        .incidents-table th:nth-child(6),
+        .incidents-table td:nth-child(6) {
+            width: 10%; /* Created */
+        }
+        
+        .incidents-table th:nth-child(7),
+        .incidents-table td:nth-child(7) {
+            width: 8%; /* Age (Days) */
+        }
+        
+        .incidents-table th:nth-child(8),
+        .incidents-table td:nth-child(8) {
+            width: 8%; /* Actions */
+            white-space: nowrap;
+            overflow: visible;
+            text-overflow: clip;
+        }
+        
+        /* Static pagination */
+        .pagination-container {
+            position: sticky;
+            bottom: 0;
+            background: white;
+            padding: 1rem 0;
+            border-top: 1px solid #dee2e6;
+            margin-top: 0;
+            z-index: 10;
+        }
+        
+        /* Table row height */
+        .incidents-table tbody tr {
+            height: 50px;
+        }
+        
+        .incidents-table tbody tr td {
+            max-height: 50px;
+            line-height: 1.2;
+        }
+        
+        /* Ensure table fits in container */
+        .incidents-table-container .table {
+            margin-bottom: 0;
+        }
+        
+        /* Action buttons in fixed width */
+        .incidents-table td:last-child {
+            text-align: center;
+        }
+        
+        .incidents-table td:last-child .btn {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        /* Compliance card styles */
+        .compliance-item { 
+            border: none; 
+            border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1); 
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+            margin-bottom: 1.5rem;
+            background: white;
+            overflow: hidden;
+            position: relative;
+            cursor: pointer;
+        }
+        
+        .compliance-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s ease;
+        }
+        
+        .compliance-item:hover::before {
+            width: 8px;
+        }
+        
+        .compliance-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+        }
+        
+        .compliance-item.selected {
+            border: 2px solid #667eea;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+        }
+        
+        .compliance-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 1.5rem 1.5rem 0.5rem 1.5rem;
+            gap: 1rem;
+        }
+        
+        .compliance-header h5 {
+            margin: 0;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #2c3e50;
+            flex: 1;
+        }
+        
+        .compliance-body {
+            padding: 0 1.5rem 1.5rem 1.5rem;
+        }
+        
+        .compliance-description {
+            color: #6c757d;
+            margin-bottom: 1rem;
+            line-height: 1.6;
+        }
+        
+        .compliance-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            font-size: 0.9rem;
+        }
+        
+        .meta-item {
+            color: #495057;
+        }
+        
+        .meta-item strong {
+            color: #2c3e50;
+        }
+        
+        /* Removed checkbox styles - no longer needed */
+        
+        /* Incident Details Modal - Sharp Edge Design */
+        .incident-modal {
+            display: none;
+            position: fixed;
+            z-index: 1050;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(2px);
+        }
+        
+        .incident-modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .incident-modal-content {
+            background: white;
+            border-radius: 0;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+            max-width: 1000px;
+            width: 98%;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+            animation: modalSlideIn 0.3s ease-out;
+            border: none;
+        }
+        
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px) scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        
+        .incident-modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 0;
+            position: relative;
+            border: none;
+        }
+        
+        .incident-modal-title {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+        
+        .incident-modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 0;
+            transition: background-color 0.3s ease;
+        }
+        
+        .incident-modal-close:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        
+        .incident-modal-body {
+            padding: 2rem;
+        }
+        
+        .incident-detail-row {
+            display: flex;
+            margin-bottom: 1rem;
+            align-items: flex-start;
+        }
+        
+        .incident-detail-label {
+            font-weight: 600;
+            color: #495057;
+            min-width: 120px;
+            margin-right: 1rem;
+        }
+        
+        .incident-detail-value {
+            flex: 1;
+            color: #212529;
+        }
+        
+        .incident-detail-badge {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 0;
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .incident-description {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 0;
+            border-left: 4px solid #667eea;
+            margin: 1rem 0;
+        }
+        
+        .incident-notes {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 0;
+            margin: 1rem 0;
+        }
+        
+        .incident-notes h6 {
+            color: #495057;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        
+        .incident-notes p {
+            margin: 0;
+            color: #6c757d;
+            font-style: italic;
+        }
+        
+        .sidebar-fixed.collapsed .sidebar-toggle i {
+            transform: rotate(90deg);
+        }
+        
+        /* Sidebar header layout */
+        .sidebar-header {
+            display: flex;
+            align-items: baseline;
+            margin-bottom: 1.5rem;
+        }
+        
+        /* Collapsed sidebar styles */
+        .sidebar-fixed.collapsed .sidebar-section-title {
+            display: none;
+        }
+        
+        .sidebar-fixed.collapsed .sidebar-header {
+            justify-content: center;
+        }
+        
+        .sidebar-fixed.collapsed .sidebar-nav-link {
+            justify-content: center;
+            padding: 1rem 1rem;
+        }
+        
+        .sidebar-fixed.collapsed .sidebar-nav-link span {
+            display: none;
+        }
+        
+        .sidebar-fixed.collapsed .sidebar-nav-icon {
+            margin-right: 0;
+        }
+        
+        .sidebar-fixed.collapsed .sidebar-nav-item {
+            text-align: center;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 767.98px) {
+            .sidebar-fixed {
+                position: relative;
+                top: 0;
+                height: auto;
+                width: 100%;
+                padding: 1rem;
+            }
+            
+            .main-content-fixed {
+                margin-left: 0;
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+  
+
+    <!-- Side Panel - Fixed -->
+    <div class="sidebar-fixed" id="sidebar">
+        <div class="sidebar-card h-100">
+            <div class="card-header">
+                <div class="sidebar-header">
+                    <button class="sidebar-toggle" onclick="toggleSidebar()">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h5 class="sidebar-section-title">Main Tools</h5>
+                </div>
+            </div>
+            <div class="card-body">
+                <ul class="sidebar-nav">
+                    <li class="sidebar-nav-item">
+                        <a href="#" class="sidebar-nav-link active" id="dashboardTab" onclick="showTab('dashboard')">
+                            <i class="fas fa-home sidebar-nav-icon"></i>
+                            <span>Overview</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-nav-item">
+                        <a href="#" class="sidebar-nav-link" id="incidentsTab" onclick="showTab('incidents')">
+                            <i class="fas fa-exclamation-triangle sidebar-nav-icon"></i>
+                            <span>Incidents</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-nav-item">
+                        <a href="#" class="sidebar-nav-link" id="complianceTab" onclick="showTab('compliance')">
+                            <i class="fas fa-shield-alt sidebar-nav-icon"></i>
+                            <span>Compliance</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Area - Fixed -->
+    <div class="main-content-fixed">
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-shield-alt me-2"></i>
+                Secure Dashboard
+            </a>
+            <div class="navbar-nav ms-auto">
+                <span class="navbar-text me-3">
+                    <i class="fas fa-user me-1"></i>
+                    Welcome, <strong th:text="${username}"></strong>
+                </span>
+                <button class="btn btn-outline-light btn-sm me-2" onclick="shutdownApplication()" title="Shutdown Application">
+                    <i class="fas fa-power-off me-1"></i>
+                    Shutdown
+                </button>
+                <a class="nav-link" th:href="@{/logout}">
+                    <i class="fas fa-sign-out-alt me-1"></i>
+                    Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+    <div class="container-fluid mt-4">
+            
+                <!-- Dashboard Content -->
+                <div id="dashboardContent">
+                    <!-- Welcome Section -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h4 class="mb-0">
+                                        <i class="fas fa-tachometer-alt me-2"></i>
+                                        Dashboard Analytics
+                                    </h4>
+                                </div>
+                                <div class="card-body">
+                                    <p class="card-text">ServiceNow Incident Analytics and Trends</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Charts Section -->
+                    <div class="row mb-4">
+                        <!-- Current Month Priority Chart -->
+                        <div class="col-lg-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-header">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-chart-pie me-2"></i>
+                                        Priority Distribution - Current Month
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="priorityMonthChart" width="400" height="300"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Current Year Priority Chart -->
+                        <div class="col-lg-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-header">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-chart-pie me-2"></i>
+                                        Priority Distribution - Current Year
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="priorityYearChart" width="400" height="300"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Priority 5 Trend Chart -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-chart-bar me-2"></i>
+                                        Priority 5 Incidents Trend - 2024
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="priority5TrendChart" width="800" height="400"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Compliance Content -->
+                <div id="complianceContent" style="display: none;">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h4 class="mb-0">
+                                    <i class="fas fa-shield-alt me-2"></i>
+                                    Compliance Management Dashboard
+                                </h4>
+                                <div class="d-flex align-items-center">
+                                    <button class="btn btn-primary rounded-pill me-3 custom-hover-btn" onclick="generateComplianceEmailReport()">
+                                        <i class="fas fa-envelope me-2"></i>
+                                        Email Report
+                                    </button>
+                                    <button class="btn btn-primary rounded-pill me-3 custom-hover-btn" onclick="downloadComplianceReport()">
+                                        <i class="fas fa-download me-2"></i>
+                                        Download Report
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <!-- Compliance Metrics -->
+                            <div id="complianceMetrics" class="row mb-4">
+                                <div class="col-md-3 mb-3">
+                                    <div class="count-card" onclick="filterByComplianceStatus('all')">
+                                        <div class="card-body text-center">
+                                            <div class="d-flex align-items-center justify-content-center mb-2">
+                                                <div class="count-icon">
+                                                    <i class="fas fa-list-alt"></i>
+                                                </div>
+                                            </div>
+                                            <div class="count-number">26</div>
+                                            <div class="count-label">Total</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <div class="count-card" onclick="filterByComplianceStatus('escalated')">
+                                        <div class="card-body text-center">
+                                            <div class="d-flex align-items-center justify-content-center mb-2">
+                                                <div class="count-icon">
+                                                    <i class="fas fa-exclamation-triangle"></i>
+                                                </div>
+                                            </div>
+                                            <div class="count-number">4</div>
+                                            <div class="count-label">Escalated</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <div class="count-card" onclick="filterByComplianceStatus('nreca')">
+                                        <div class="card-body text-center">
+                                            <div class="d-flex align-items-center justify-content-center mb-2">
+                                                <div class="count-icon">
+                                                    <i class="fas fa-building"></i>
+                                                </div>
+                                            </div>
+                                            <div class="count-number">4</div>
+                                            <div class="count-label">NRECA</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <div class="count-card" onclick="filterByComplianceStatus('email_escalated')">
+                                        <div class="card-body text-center">
+                                            <div class="d-flex align-items-center justify-content-center mb-2">
+                                                <div class="count-icon">
+                                                    <i class="fas fa-envelope"></i>
+                                                </div>
+                                            </div>
+                                            <div class="count-number" id="emailEscalatedCount">0</div>
+                                            <div class="count-label">Email Escalated</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Filter Controls -->
+                            <div class="row mb-4">
+                                <div class="col-md-3">
+                                    <label for="compliancePriorityFilter" class="form-label">Priority</label>
+                                    <select class="form-select" id="compliancePriorityFilter" onchange="applyComplianceFilters()">
+                                        <option value="">All Priorities</option>
+                                        <option value="Critical">Critical</option>
+                                        <option value="High">High</option>
+                                        <option value="Medium">Medium</option>
+                                        <option value="Low">Low</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="complianceAssigneeFilter" class="form-label">Assignee</label>
+                                    <select class="form-select" id="complianceAssigneeFilter" onchange="applyComplianceFilters()">
+                                        <option value="">All Assignees</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="complianceSearchInput" class="form-label">Search</label>
+                                    <input type="text" class="form-control" id="complianceSearchInput" placeholder="Search compliance..." onkeyup="applyComplianceFilters()">
+                                </div>
+                                <div class="col-md-3 d-flex align-items-end gap-2">
+                                    <button class="btn btn-outline-secondary" onclick="resetComplianceFilters()" title="Reset all filters">
+                                        <i class="fas fa-undo"></i>
+                                    </button>
+                                    <button class="btn btn-outline-primary" onclick="openEmailEscalatedModal()" title="Manage Email Escalated Items">
+                                        <i class="fas fa-envelope"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Compliance Table -->
+                            <div class="incidents-table-container">
+                                <table class="table table-hover incidents-table">
+                                    <thead class="table-dark sticky-top">
+                                        <tr>
+                                            <th class="sortable" data-column="number" onclick="sortComplianceTable('number')">
+                                                Number
+                                                <i class="fas fa-sort sort-icon"></i>
+                                            </th>
+                                            <th class="sortable" data-column="description" onclick="sortComplianceTable('description')">
+                                                Short Description
+                                                <i class="fas fa-sort sort-icon"></i>
+                                            </th>
+                                            <th class="sortable" data-column="priority" onclick="sortComplianceTable('priority')">
+                                                Priority
+                                                <i class="fas fa-sort sort-icon"></i>
+                                            </th>
+                                            <th class="sortable" data-column="state" onclick="sortComplianceTable('state')">
+                                                State
+                                                <i class="fas fa-sort sort-icon"></i>
+                                            </th>
+                                            <th class="sortable" data-column="assignee" onclick="sortComplianceTable('assignee')">
+                                                Assignee
+                                                <i class="fas fa-sort sort-icon"></i>
+                                            </th>
+                                            <th class="sortable" data-column="created" onclick="sortComplianceTable('created')">
+                                                Created
+                                                <i class="fas fa-sort sort-icon"></i>
+                                            </th>
+                                            <th class="sortable" data-column="age" onclick="sortComplianceTable('age')">
+                                                Age (Days)
+                                                <i class="fas fa-sort sort-icon"></i>
+                                            </th>
+                                            <th class="sortable" style="background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%); color: white;">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="complianceTableBody">
+                                        <!-- Compliance items will be populated here -->
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <!-- Pagination Info -->
+                            <div class="pagination-container">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="pagination-info">
+                                        <span class="text-muted" id="compliancePaginationInfo">Showing 0 of 0 items</span>
+                                    </div>
+                                    <div class="pagination-controls">
+                            <nav aria-label="Compliance pagination">
+                                            <ul class="pagination justify-content-center mb-0" id="compliancePagination">
+                                                <!-- Pagination will be dynamically generated -->
+                                            </ul>
+                            </nav>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Incidents Content -->
+                <div id="incidentsContent" style="display: none;">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h4 class="mb-0">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    ServiceNow Incidents Dashboard
+                                </h4>
+                                <div class="d-flex align-items-center">
+                                    <button class="btn btn-primary rounded-pill me-3 custom-hover-btn" onclick="generateEmailReport()">
+                                        <i class="fas fa-envelope me-2"></i>
+                                        Email Report
+                                    </button>
+                                    <button class="btn btn-primary rounded-pill me-3 custom-hover-btn" onclick="downloadIncidentsReport()">
+                                        <i class="fas fa-download me-2"></i>
+                                        Download Report
+                                    </button>
+                                    <div class="btn-group" role="group">
+                                        <input type="radio" class="btn-check" name="viewMode" id="statusView" autocomplete="off" checked>
+                                        <label class="btn btn-outline-primary rounded-pill" for="statusView">Status View</label>
+                                        
+                                        <input type="radio" class="btn-check" name="viewMode" id="ageingView" autocomplete="off">
+                                        <label class="btn btn-outline-primary rounded-pill" for="ageingView">Ageing View</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <!-- Status Metrics -->
+                            <div id="statusMetrics" class="row mb-4">
+                                <div class="col-md-2 mb-3">
+                                    <div class="count-card" onclick="filterByStatus('all')">
+                                        <div class="card-body text-center">
+                                            <div class="d-flex align-items-center justify-content-center mb-2">
+                                                <div class="count-icon">
+                                                    <i class="fas fa-list-alt"></i>
+                                                </div>
+                                            </div>
+                                            <div class="count-number">26</div>
+                                            <div class="count-label">Total</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-2 mb-3">
+                                    <div class="count-card" onclick="filterByStatus('open')">
+                                        <div class="card-body text-center">
+                                            <div class="d-flex align-items-center justify-content-center mb-2">
+                                                <div class="count-icon">
+                                                    <i class="fas fa-exclamation-circle"></i>
+                                                </div>
+                                            </div>
+                                            <div class="count-number">8</div>
+                                            <div class="count-label">Open</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-2 mb-3">
+                                    <div class="count-card" onclick="filterByStatus('in_progress')">
+                                        <div class="card-body text-center">
+                                            <div class="d-flex align-items-center justify-content-center mb-2">
+                                                <div class="count-icon">
+                                                    <i class="fas fa-spinner"></i>
+                                                </div>
+                                            </div>
+                                            <div class="count-number">6</div>
+                                            <div class="count-label">In Progress</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-2 mb-3">
+                                    <div class="count-card" onclick="filterByStatus('waiting')">
+                                        <div class="card-body text-center">
+                                            <div class="d-flex align-items-center justify-content-center mb-2">
+                                                <div class="count-icon">
+                                                    <i class="fas fa-clock"></i>
+                                                </div>
+                                            </div>
+                                            <div class="count-number">5</div>
+                                            <div class="count-label">Waiting</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-2 mb-3">
+                                    <div class="count-card" onclick="filterByStatus('resolved')">
+                                        <div class="card-body text-center">
+                                            <div class="d-flex align-items-center justify-content-center mb-2">
+                                                <div class="count-icon">
+                                                    <i class="fas fa-check-circle"></i>
+                                                </div>
+                                            </div>
+                                            <div class="count-number">4</div>
+                                            <div class="count-label">Resolved</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-2 mb-3">
+                                    <div class="count-card" onclick="filterByStatus('closed')">
+                                        <div class="card-body text-center">
+                                            <div class="d-flex align-items-center justify-content-center mb-2">
+                                                <div class="count-icon">
+                                                    <i class="fas fa-times-circle"></i>
+                                                </div>
+                                            </div>
+                                            <div class="count-number">3</div>
+                                            <div class="count-label">Closed</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Ageing Metrics -->
+                            <div id="ageingMetrics" class="row mb-4" style="display: none;">
+                                <div class="col-md-3 mb-3">
+                                    <div class="count-card" onclick="filterByAgeing('0-1')">
+                                        <div class="card-body text-center">
+                                            <div class="d-flex align-items-center justify-content-center mb-2">
+                                                <div class="count-icon">
+                                                    <i class="fas fa-clock"></i>
+                                                </div>
+                                            </div>
+                                            <div class="count-number">2</div>
+                                            <div class="count-label">0-1 Days</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <div class="count-card" onclick="filterByAgeing('2-3')">
+                                        <div class="card-body text-center">
+                                            <div class="d-flex align-items-center justify-content-center mb-2">
+                                                <div class="count-icon">
+                                                    <i class="fas fa-hourglass-half"></i>
+                                                </div>
+                                            </div>
+                                            <div class="count-number">3</div>
+                                            <div class="count-label">2-3 Days</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <div class="count-card" onclick="filterByAgeing('4-7')">
+                                        <div class="card-body text-center">
+                                            <div class="d-flex align-items-center justify-content-center mb-2">
+                                                <div class="count-icon">
+                                                    <i class="fas fa-exclamation-triangle"></i>
+                                                </div>
+                                            </div>
+                                            <div class="count-number">4</div>
+                                            <div class="count-label">4-7 Days</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <div class="count-card" onclick="filterByAgeing('7+')">
+                                        <div class="card-body text-center">
+                                            <div class="d-flex align-items-center justify-content-center mb-2">
+                                                <div class="count-icon">
+                                                    <i class="fas fa-fire"></i>
+                                                </div>
+                                            </div>
+                                            <div class="count-number">17</div>
+                                            <div class="count-label">7+ Days</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Filter Controls -->
+                            <div class="row mb-4">
+                                <div class="col-md-4">
+                                    <label for="priorityFilter" class="form-label">Priority</label>
+                                    <select class="form-select" id="priorityFilter" onchange="applyFilters()">
+                                        <option value="">All Priorities</option>
+                                        <option value="1">1 - Critical</option>
+                                        <option value="2">2 - High</option>
+                                        <option value="3">3 - Medium</option>
+                                        <option value="4">4 - Low</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="assigneeFilter" class="form-label">Assignee</label>
+                                    <select class="form-select" id="assigneeFilter" onchange="applyFilters()">
+                                        <option value="">All Assignees</option>
+                                        <option value="john.doe">John Doe</option>
+                                        <option value="jane.smith">Jane Smith</option>
+                                        <option value="mike.johnson">Mike Johnson</option>
+                                        <option value="sarah.wilson">Sarah Wilson</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="searchInput" class="form-label">Search</label>
+                                    <input type="text" class="form-control" id="searchInput" placeholder="Search incidents..." onkeyup="applyFilters()">
+                                </div>
+                                <div class="col-md-1 d-flex align-items-end">
+                                    <button class="btn btn-outline-secondary w-100" onclick="resetFilters()" title="Reset all filters">
+                                        <i class="fas fa-undo"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Incidents List -->
+                            <div class="incidents-table-container">
+                                <table class="table table-hover incidents-table">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th class="sortable" data-column="number" onclick="sortTable('number')">
+                                                Number
+                                                <i class="fas fa-sort sort-icon"></i>
+                                            </th>
+                                            <th class="sortable" data-column="description" onclick="sortTable('description')">
+                                                Short Description
+                                                <i class="fas fa-sort sort-icon"></i>
+                                            </th>
+                                            <th class="sortable" data-column="priority" onclick="sortTable('priority')">
+                                                Priority
+                                                <i class="fas fa-sort sort-icon"></i>
+                                            </th>
+                                            <th class="sortable" data-column="state" onclick="sortTable('state')">
+                                                State
+                                                <i class="fas fa-sort sort-icon"></i>
+                                            </th>
+                                            <th class="sortable" data-column="assignee" onclick="sortTable('assignee')">
+                                                Assignee
+                                                <i class="fas fa-sort sort-icon"></i>
+                                            </th>
+                                            <th class="sortable" data-column="created" onclick="sortTable('created')">
+                                                Created
+                                                <i class="fas fa-sort sort-icon"></i>
+                                            </th>
+                                            <th class="sortable" data-column="age" onclick="sortTable('age')">
+                                                Age (Days)
+                                                <i class="fas fa-sort sort-icon"></i>
+                                            </th>
+                                            <th class="sortable" style="background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%); color: white;">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="incidentsTableBody">
+                                        <!-- Sample incidents will be populated here -->
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <!-- Pagination Info -->
+                            <div class="pagination-container">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="pagination-info">
+                                        <span class="text-muted" id="paginationInfo">Showing 0 of 0 items</span>
+                                    </div>
+                                    <div class="pagination-controls">
+                            <nav aria-label="Incidents pagination">
+                                            <ul class="pagination justify-content-center mb-0" id="incidentsPagination">
+                                                <!-- Pagination will be dynamically generated -->
+                                            </ul>
+                            </nav>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Email Escalated Search Modal -->
+        <div class="modal fade" id="emailEscalatedModal" tabindex="-1" aria-labelledby="emailEscalatedModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="emailEscalatedModalLabel">
+                            <i class="fas fa-envelope me-2"></i>Email Escalated Items
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <!-- Search Section -->
+                        <div class="row mb-3">
+                            <div class="col-md-8">
+                                <label for="modalSearchInput" class="form-label">Search Compliance Items</label>
+                                <input type="text" class="form-control" id="modalSearchInput" placeholder="Enter incident number or search term..." onkeyup="searchComplianceItems()">
+                            </div>
+                            <div class="col-md-4 d-flex align-items-end">
+                                <button class="btn btn-primary w-100" onclick="searchComplianceItems()">
+                                    <i class="fas fa-search me-2"></i>Search
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Search Results -->
+                        <div id="searchResultsSection" style="display: none;">
+                            <h6 class="mb-3">Search Results</h6>
+                            <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                                <table class="table table-sm table-hover">
+                                    <thead class="table-light sticky-top">
+                                        <tr>
+                                            <th width="50">Select</th>
+                                            <th>ID</th>
+                                            <th>Title</th>
+                                            <th>Priority</th>
+                                            <th>Assignee</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="searchResultsBody">
+                                        <!-- Search results will be populated here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mt-3">
+                                <span class="text-muted" id="searchResultsInfo">0 results found</span>
+                                <button class="btn btn-success" onclick="addSelectedItems()" id="addSelectedBtn" disabled>
+                                    <i class="fas fa-plus me-2"></i>Add Selected (<span id="selectedCount">0</span>)
+                                </button>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <!-- Current Email Escalated Items -->
+                        <div>
+                            <h6 class="mb-3">Current Email Escalated Items</h6>
+                            <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                                <table class="table table-sm">
+                                    <thead class="table-light sticky-top">
+                                        <tr>
+                                            <th width="50">Remove</th>
+                                            <th>ID</th>
+                                            <th>Title</th>
+                                            <th>Priority</th>
+                                            <th>Assignee</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="currentEscalatedBody">
+                                        <!-- Current escalated items will be populated here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="text-muted mt-2" id="currentEscalatedInfo">0 items in email escalated list</div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary" onclick="refreshComplianceData()" data-bs-dismiss="modal">
+                            <i class="fas fa-sync me-2"></i>Update & Close
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Incident Details Modal -->
+        <div id="incidentModal" class="incident-modal">
+            <div class="incident-modal-content">
+                <div class="incident-modal-header">
+                    <h4 class="incident-modal-title" id="modalIncidentNumber">Incident Details</h4>
+                    <button class="incident-modal-close" onclick="closeIncidentModal()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="incident-modal-body">
+                    <div class="incident-detail-row">
+                        <div class="incident-detail-label">Incident Number:</div>
+                        <div class="incident-detail-value" id="modalIncidentNumberValue">-</div>
+                    </div>
+                    <div class="incident-detail-row">
+                        <div class="incident-detail-label">Status:</div>
+                        <div class="incident-detail-value" id="modalIncidentStatus">-</div>
+                    </div>
+                    <div class="incident-detail-row">
+                        <div class="incident-detail-label">Created Date:</div>
+                        <div class="incident-detail-value" id="modalIncidentCreated">-</div>
+                    </div>
+                    <div class="incident-detail-row">
+                        <div class="incident-detail-label">Age in Days:</div>
+                        <div class="incident-detail-value" id="modalIncidentAge">-</div>
+                    </div>
+                    <div class="incident-detail-row">
+                        <div class="incident-detail-label">Assignee:</div>
+                        <div class="incident-detail-value" id="modalIncidentAssignee">-</div>
+                    </div>
+                    <div class="incident-detail-row">
+                        <div class="incident-detail-label">Priority:</div>
+                        <div class="incident-detail-value" id="modalIncidentPriority">-</div>
+                    </div>
+                    
+                    <div class="incident-description">
+                        <h6>Short Description</h6>
+                        <p id="modalIncidentShortDescription">-</p>
+                    </div>
+                    
+                    <div class="incident-description">
+                        <h6>Description</h6>
+                        <p id="modalIncidentDescription">-</p>
+                    </div>
+                    
+                    <div class="incident-notes">
+                        <h6>Work Notes</h6>
+                        <p id="modalIncidentWorkNotes">No work notes available</p>
+                    </div>
+                    
+                    <div class="incident-notes">
+                        <h6>Comments</h6>
+                        <p id="modalIncidentComments">No comments available</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Compliance Details Modal -->
+        <div id="complianceModal" class="incident-modal">
+            <div class="incident-modal-content">
+                <div class="incident-modal-header">
+                    <h4 class="incident-modal-title" id="modalComplianceId">Compliance Details</h4>
+                    <button class="incident-modal-close" onclick="closeComplianceModal()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="incident-modal-body">
+                    <div class="incident-detail-row">
+                        <div class="incident-detail-label">Compliance ID:</div>
+                        <div class="incident-detail-value" id="modalComplianceIdValue">-</div>
+                    </div>
+                    <div class="incident-detail-row">
+                        <div class="incident-detail-label">Title:</div>
+                        <div class="incident-detail-value" id="modalComplianceTitle">-</div>
+                    </div>
+                    <div class="incident-detail-row">
+                        <div class="incident-detail-label">Status:</div>
+                        <div class="incident-detail-value" id="modalComplianceStatus">-</div>
+                    </div>
+                    <div class="incident-detail-row">
+                        <div class="incident-detail-label">Priority:</div>
+                        <div class="incident-detail-value" id="modalCompliancePriority">-</div>
+                    </div>
+                    <div class="incident-detail-row">
+                        <div class="incident-detail-label">Assignee:</div>
+                        <div class="incident-detail-value" id="modalComplianceAssignee">-</div>
+                    </div>
+                    <div class="incident-detail-row">
+                        <div class="incident-detail-label">Created Date:</div>
+                        <div class="incident-detail-value" id="modalComplianceCreated">-</div>
+                    </div>
+                    <div class="incident-detail-row">
+                        <div class="incident-detail-label">Age in Days:</div>
+                        <div class="incident-detail-value" id="modalComplianceAge">-</div>
+                    </div>
+                    
+                    <div class="incident-description">
+                        <h6>Description</h6>
+                        <p id="modalComplianceDescription">-</p>
+                    </div>
+                    
+                    <div class="incident-description">
+                        <h6>Category</h6>
+                        <p id="modalComplianceCategory">-</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function testProtectedApi() {
+            fetch('/api/protected')
+                .then(response => {
+                    if (response.status === 401) {
+                        window.location.href = '/login?expired=true';
+                        return;
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    displayResponse(data);
+                })
+                .catch(error => {
+                    displayResponse({error: error.message});
+                });
+        }
+
+        function testPublicApi() {
+            fetch('/api/public')
+                .then(response => response.json())
+                .then(data => {
+                    displayResponse(data);
+                })
+                .catch(error => {
+                    displayResponse({error: error.message});
+                });
+        }
+
+        function getUserInfo() {
+            fetch('/api/user-info')
+                .then(response => {
+                    if (response.status === 401) {
+                        window.location.href = '/login?expired=true';
+                        return;
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    displayResponse(data);
+                })
+                .catch(error => {
+                    displayResponse({error: error.message});
+                });
+        }
+
+        function displayResponse(data) {
+            const responseDiv = document.getElementById('apiResponse');
+            const responseContent = document.getElementById('responseContent');
+            
+            responseContent.textContent = JSON.stringify(data, null, 2);
+            responseDiv.style.display = 'block';
+        }
+
+        // Auto-refresh token validation every 5 minutes
+        setInterval(() => {
+            fetch('/api/user-info')
+                .then(response => {
+                    if (response.status === 401) {
+                        window.location.href = '/login?expired=true';
+                    }
+                })
+                .catch(error => {
+                    // Token validation failed - redirect to login
+                });
+        }, 300000); // 5 minutes
+
+        // Sample ServiceNow incidents data
+        const incidentsData = [
+            { number: 'INC0012345', description: 'Database connection timeout affecting user login', priority: 1, state: 'open', assignee: 'john.doe', created: '2024-01-15', age: 2 },
+            { number: 'INC0012346', description: 'Email notifications not being sent', priority: 2, state: 'in_progress', assignee: 'jane.smith', created: '2024-01-14', age: 3 },
+            { number: 'INC0012347', description: 'Application performance degradation', priority: 1, state: 'waiting', assignee: 'mike.johnson', created: '2024-01-13', age: 4 },
+            { number: 'INC0012348', description: 'User unable to access reports module', priority: 3, state: 'resolved', assignee: 'sarah.wilson', created: '2024-01-12', age: 5 },
+            { number: 'INC0012349', description: 'Scheduled job failing intermittently', priority: 2, state: 'open', assignee: 'john.doe', created: '2024-01-11', age: 6 },
+            { number: 'INC0012350', description: 'Login page loading slowly', priority: 3, state: 'in_progress', assignee: 'jane.smith', created: '2024-01-10', age: 7 },
+            { number: 'INC0012351', description: 'Data export functionality not working', priority: 4, state: 'closed', assignee: 'mike.johnson', created: '2024-01-09', age: 8 },
+            { number: 'INC0012352', description: 'Security vulnerability in user management', priority: 1, state: 'open', assignee: 'sarah.wilson', created: '2024-01-08', age: 9 },
+            { number: 'INC0012353', description: 'Backup process taking too long', priority: 2, state: 'waiting', assignee: 'john.doe', created: '2024-01-07', age: 10 },
+            { number: 'INC0012354', description: 'Mobile app not syncing data', priority: 3, state: 'resolved', assignee: 'jane.smith', created: '2024-01-06', age: 11 },
+            { number: 'INC0012355', description: 'API rate limiting too restrictive', priority: 2, state: 'in_progress', assignee: 'mike.johnson', created: '2024-01-05', age: 12 },
+            { number: 'INC0012356', description: 'User profile images not displaying', priority: 4, state: 'open', assignee: 'sarah.wilson', created: '2024-01-04', age: 13 },
+            { number: 'INC0012357', description: 'Server memory usage exceeding 90%', priority: 1, state: 'open', assignee: 'john.doe', created: '2024-01-03', age: 14 },
+            { number: 'INC0012358', description: 'SSL certificate expiring in 30 days', priority: 2, state: 'in_progress', assignee: 'jane.smith', created: '2024-01-02', age: 15 },
+            { number: 'INC0012359', description: 'User authentication failing for LDAP users', priority: 1, state: 'waiting', assignee: 'mike.johnson', created: '2024-01-01', age: 16 },
+            { number: 'INC0012360', description: 'Dashboard widgets not loading properly', priority: 3, state: 'resolved', assignee: 'sarah.wilson', created: '2023-12-31', age: 17 },
+            { number: 'INC0012361', description: 'File upload size limit too restrictive', priority: 4, state: 'closed', assignee: 'john.doe', created: '2023-12-30', age: 18 },
+            { number: 'INC0012362', description: 'Database backup job failing', priority: 2, state: 'open', assignee: 'jane.smith', created: '2023-12-29', age: 19 },
+            { number: 'INC0012363', description: 'Email server not responding', priority: 1, state: 'in_progress', assignee: 'mike.johnson', created: '2023-12-28', age: 20 },
+            { number: 'INC0012364', description: 'User session timeout too short', priority: 3, state: 'waiting', assignee: 'sarah.wilson', created: '2023-12-27', age: 21 },
+            { number: 'INC0012365', description: 'Report generation taking too long', priority: 2, state: 'resolved', assignee: 'john.doe', created: '2023-12-26', age: 22 },
+            { number: 'INC0012366', description: 'Mobile app crashing on iOS devices', priority: 1, state: 'open', assignee: 'jane.smith', created: '2023-12-25', age: 23 },
+            { number: 'INC0012367', description: 'API endpoint returning 500 errors', priority: 2, state: 'in_progress', assignee: 'mike.johnson', created: '2023-12-24', age: 24 },
+            { number: 'INC0012368', description: 'User permissions not working correctly', priority: 3, state: 'closed', assignee: 'sarah.wilson', created: '2023-12-23', age: 25 },
+            { number: 'INC0012369', description: 'System logs consuming too much disk space', priority: 4, state: 'open', assignee: 'john.doe', created: '2023-12-22', age: 26 },
+            { number: 'INC0012370', description: 'Third-party integration API changes', priority: 2, state: 'waiting', assignee: 'jane.smith', created: '2023-12-21', age: 27 }
+        ];
+
+        let currentFilter = { statuses: [], ageing: 'all', priority: '', assignee: '', search: '' };
+        let currentSort = { column: null, direction: 'asc' };
+        let currentPage = 1;
+        let itemsPerPage = 10;
+
+        // Sort functionality
+        function sortTable(column) {
+            const header = document.querySelector(`[data-column="${column}"]`);
+            const isCurrentColumn = currentSort.column === column;
+            
+            // Determine sort direction
+            if (isCurrentColumn) {
+                currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSort.direction = 'asc';
+            }
+            currentSort.column = column;
+            
+            // Update sort indicators
+            document.querySelectorAll('.sortable').forEach(th => {
+                th.classList.remove('sorted', 'sorted-asc', 'sorted-desc');
+            });
+            
+            header.classList.add('sorted', `sorted-${currentSort.direction}`);
+            
+            // Apply sorting and refresh display
+            applyFilters();
+        }
+
+        // Sidebar toggle functionality
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.querySelector('.main-content-fixed');
+            
+            sidebar.classList.toggle('collapsed');
+            mainContent.classList.toggle('sidebar-collapsed');
+        }
+
+        // Tab switching functionality
+        function showTab(tabName) {
+            // Hide all content sections
+            document.getElementById('dashboardContent').style.display = 'none';
+            document.getElementById('incidentsContent').style.display = 'none';
+            document.getElementById('complianceContent').style.display = 'none';
+            
+            // Remove active class from all navigation links
+            document.querySelectorAll('.sidebar-nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            
+            // Show selected content and activate corresponding tab
+            if (tabName === 'dashboard') {
+                document.getElementById('dashboardContent').style.display = 'block';
+                document.getElementById('dashboardTab').classList.add('active');
+                // Load dashboard charts when dashboard tab is shown
+                loadDashboardCharts();
+            } else if (tabName === 'incidents') {
+                document.getElementById('incidentsContent').style.display = 'block';
+                document.getElementById('incidentsTab').classList.add('active');
+                initializeIncidentsData();
+            } else if (tabName === 'compliance') {
+                document.getElementById('complianceContent').style.display = 'block';
+                document.getElementById('complianceTab').classList.add('active');
+                initializeComplianceData();
+            }
+        }
+
+        // View mode toggle (Status vs Ageing)
+        document.addEventListener('DOMContentLoaded', function() {
+            const statusView = document.getElementById('statusView');
+            const ageingView = document.getElementById('ageingView');
+            const statusMetrics = document.getElementById('statusMetrics');
+            const ageingMetrics = document.getElementById('ageingMetrics');
+
+            statusView.addEventListener('change', function() {
+                if (this.checked) {
+                    statusMetrics.style.display = 'flex';
+                    ageingMetrics.style.display = 'none';
+                    currentFilter.ageing = 'all';
+                    // Reset ageing cards
+                    document.querySelectorAll('#ageingMetrics .count-card').forEach(card => {
+                        card.classList.remove('active');
+                    });
+                    
+                    // Select Total tab by default when switching to Status View
+                    const totalCard = document.querySelector('#statusMetrics .count-card[onclick*="all"]');
+                    if (totalCard) {
+                        totalCard.classList.add('active');
+                    }
+                    currentFilter.statuses = [];
+                    
+                    applyFilters();
+                }
+            });
+
+            ageingView.addEventListener('change', function() {
+                if (this.checked) {
+                    statusMetrics.style.display = 'none';
+                    ageingMetrics.style.display = 'flex';
+                    currentFilter.statuses = [];
+                    // Reset status cards
+                    document.querySelectorAll('#statusMetrics .count-card').forEach(card => {
+                        card.classList.remove('active');
+                    });
+                    applyFilters();
+                }
+            });
+        });
+
+        // Filter by status (multi-select)
+        function filterByStatus(status) {
+            const clickedCard = event.target.closest('.count-card');
+            const isSelected = clickedCard.classList.contains('active');
+            
+            if (status === 'all') {
+                // Special handling for "Total" - clear all other selections and select Total
+                document.querySelectorAll('#statusMetrics .count-card').forEach(card => {
+                card.classList.remove('active');
+            });
+                clickedCard.classList.add('active');
+                currentFilter.statuses = [];
+            } else {
+                if (isSelected) {
+                    // Remove from selection
+                    clickedCard.classList.remove('active');
+                    currentFilter.statuses = currentFilter.statuses.filter(s => s !== status);
+                    
+                    // If no other tabs are selected, select Total
+                    if (currentFilter.statuses.length === 0) {
+                        const totalCard = document.querySelector('#statusMetrics .count-card[onclick*="all"]');
+                        if (totalCard) {
+                            totalCard.classList.add('active');
+                        }
+                    }
+                } else {
+                    // Add to selection - first unselect Total if it's selected
+                    const totalCard = document.querySelector('#statusMetrics .count-card[onclick*="all"]');
+                    if (totalCard && totalCard.classList.contains('active')) {
+                        totalCard.classList.remove('active');
+                    }
+                    
+                    clickedCard.classList.add('active');
+                    currentFilter.statuses.push(status);
+                }
+            }
+            
+            // Reset ageing filter when status changes
+            currentFilter.ageing = 'all';
+            
+            // Reset ageing cards
+            document.querySelectorAll('#ageingMetrics .count-card').forEach(card => {
+                card.classList.remove('active');
+            });
+            
+            applyFilters();
+        }
+
+        // Filter by ageing
+        function filterByAgeing(ageing) {
+            // Remove active class from all ageing cards
+            document.querySelectorAll('#ageingMetrics .count-card').forEach(card => {
+                card.classList.remove('active');
+            });
+            
+            // Add active class to clicked card
+            event.target.closest('.count-card').classList.add('active');
+            
+            currentFilter.ageing = ageing;
+            currentFilter.status = 'all';
+            applyFilters();
+        }
+
+        // Filter by priority
+        function filterByPriority(priority) {
+            // Remove active class from all priority cards
+            document.querySelectorAll('.count-card').forEach(card => {
+                card.classList.remove('active');
+            });
+            
+            // Add active class to clicked card
+            event.target.closest('.count-card').classList.add('active');
+            
+            currentFilter.priority = priority;
+            currentFilter.status = 'all';
+            currentFilter.ageing = 'all';
+            applyFilters();
+        }
+
+        // Apply all filters
+        function applyFilters() {
+            const priority = document.getElementById('priorityFilter').value;
+            const assignee = document.getElementById('assigneeFilter').value;
+            const search = document.getElementById('searchInput').value.toLowerCase();
+
+            currentFilter.priority = priority;
+            currentFilter.assignee = assignee;
+            currentFilter.search = search;
+            
+            // Reset to first page when filters change
+            currentPage = 1;
+
+            loadIncidentsData();
+        }
+        
+        // Apply filters without resetting pagination (for page navigation)
+        function applyFiltersKeepPage() {
+            const priority = document.getElementById('priorityFilter').value;
+            const assignee = document.getElementById('assigneeFilter').value;
+            const search = document.getElementById('searchInput').value.toLowerCase();
+
+            currentFilter.priority = priority;
+            currentFilter.assignee = assignee;
+            currentFilter.search = search;
+
+            loadIncidentsData();
+        }
+
+        // Reset all filters
+        function resetFilters() {
+            // Reset form inputs
+            document.getElementById('priorityFilter').value = '';
+            document.getElementById('assigneeFilter').value = '';
+            document.getElementById('searchInput').value = '';
+            
+            // Reset filter state
+            currentFilter.priority = '';
+            currentFilter.assignee = '';
+            currentFilter.search = '';
+            currentFilter.statuses = [];
+            currentFilter.ageing = 'all';
+            
+            // Reset pagination
+            currentPage = 1;
+            
+            // Reset count card active states
+            document.querySelectorAll('.count-card').forEach(card => {
+                card.classList.remove('active');
+            });
+            
+            // Select Total tab by default
+            const totalCard = document.querySelector('#statusMetrics .count-card[onclick*="all"]');
+            if (totalCard) {
+                totalCard.classList.add('active');
+            }
+            
+            // Reset sort state
+            currentSort = { column: null, direction: 'asc' };
+            document.querySelectorAll('.sortable').forEach(header => {
+                header.classList.remove('sorted', 'sorted-asc', 'sorted-desc');
+            });
+            
+            // Apply filters to refresh the display
+            applyFilters();
+        }
+
+        // Load and display incidents data
+        function loadIncidentsData() {
+            let filteredData = incidentsData.filter(incident => {
+                // Status filter (multi-select)
+                if (currentFilter.statuses.length > 0 && !currentFilter.statuses.includes(incident.state)) {
+                    return false;
+                }
+
+                // Ageing filter
+                if (currentFilter.ageing !== 'all') {
+                    const age = incident.age;
+                    switch (currentFilter.ageing) {
+                        case '0-1':
+                            if (age > 1) return false;
+                            break;
+                        case '2-3':
+                            if (age < 2 || age > 3) return false;
+                            break;
+                        case '4-7':
+                            if (age < 4 || age > 7) return false;
+                            break;
+                        case '7+':
+                            if (age <= 7) return false;
+                            break;
+                    }
+                }
+
+                // Priority filter
+                if (currentFilter.priority && incident.priority.toString() !== currentFilter.priority) {
+                    return false;
+                }
+
+                // Assignee filter
+                if (currentFilter.assignee && incident.assignee !== currentFilter.assignee) {
+                    return false;
+                }
+
+                // Search filter
+                if (currentFilter.search) {
+                    const searchText = incident.number + ' ' + incident.description + ' ' + incident.assignee;
+                    if (!searchText.toLowerCase().includes(currentFilter.search)) {
+                        return false;
+                    }
+                }
+
+                return true;
+            });
+
+            // Apply sorting if a column is selected
+            if (currentSort.column) {
+                filteredData.sort((a, b) => {
+                    let aValue = a[currentSort.column];
+                    let bValue = b[currentSort.column];
+                    
+                    // Handle different data types
+                    if (currentSort.column === 'number' || currentSort.column === 'description' || currentSort.column === 'assignee' || currentSort.column === 'state') {
+                        aValue = aValue.toString().toLowerCase();
+                        bValue = bValue.toString().toLowerCase();
+                    } else if (currentSort.column === 'priority' || currentSort.column === 'age') {
+                        aValue = parseInt(aValue);
+                        bValue = parseInt(bValue);
+                    } else if (currentSort.column === 'created') {
+                        aValue = new Date(aValue);
+                        bValue = new Date(bValue);
+                    }
+                    
+                    if (aValue < bValue) {
+                        return currentSort.direction === 'asc' ? -1 : 1;
+                    }
+                    if (aValue > bValue) {
+                        return currentSort.direction === 'asc' ? 1 : -1;
+                    }
+                    return 0;
+                });
+            }
+
+            // Calculate pagination
+            const totalItems = filteredData.length;
+            const totalPages = Math.ceil(totalItems / itemsPerPage);
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
+            const paginatedData = filteredData.slice(startIndex, endIndex);
+            
+            
+            displayIncidents(paginatedData, totalItems, totalPages);
+        }
+
+        // Initialize incidents data when incidents tab is shown
+        function initializeIncidentsData() {
+            if (document.getElementById('incidentsContent').style.display !== 'none') {
+                // Set Total tab as selected by default
+                const totalCard = document.querySelector('#statusMetrics .count-card[onclick*="all"]');
+                if (totalCard && !totalCard.classList.contains('active')) {
+                    totalCard.classList.add('active');
+                }
+                
+                // Clear any other status selections
+                currentFilter.statuses = [];
+                
+                // Reset pagination to page 1
+                currentPage = 1;
+                
+                applyFilters();
+            }
+        }
+
+        // Display incidents in table
+        function displayIncidents(incidents, totalItems, totalPages) {
+            const tbody = document.getElementById('incidentsTableBody');
+            tbody.innerHTML = '';
+
+            if (incidents.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted" style="height: 400px; vertical-align: middle;">No incidents found matching the current filters.</td></tr>';
+                updatePaginationInfo(0, 0, 0);
+                updatePaginationControls(1, 1);
+                return;
+            }
+
+            incidents.forEach(incident => {
+                const row = document.createElement('tr');
+                row.className = 'incident-row';
+               row.style.cursor = 'pointer';
+                row.onclick = () => showIncidentModal(incident);
+                row.innerHTML = `
+                    <td><strong>${incident.number}</strong></td>
+                    <td>${incident.description}</td>
+                    <td><span class="badge priority-${incident.priority}">${incident.priority}</span></td>
+                    <td><span class="badge status-${incident.state.replace('_', '-')}">${incident.state.replace('_', ' ').toUpperCase()}</span></td>
+                    <td>${incident.assignee.replace('.', ' ').replace(/\b\w/g, l => l.toUpperCase())}</td>
+                    <td>${incident.created}</td>
+                    <td><span class="badge ${getAgeBadgeClass(incident.age)}">${incident.age}</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary" onclick="event.stopPropagation(); viewIncident('${incident.number}')" title="View in ServiceNow">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+            
+            // Update pagination info and controls
+            const startItem = (currentPage - 1) * itemsPerPage + 1;
+            const endItem = Math.min(currentPage * itemsPerPage, totalItems);
+            updatePaginationInfo(startItem, endItem, totalItems);
+            updatePaginationControls(currentPage, totalPages);
+        }
+
+        // Update pagination info
+        function updatePaginationInfo(startItem, endItem, totalItems) {
+            const paginationInfo = document.getElementById('paginationInfo');
+            if (paginationInfo) {
+                if (totalItems === 0) {
+                    paginationInfo.textContent = 'Showing 0 of 0 items';
+                } else {
+                    paginationInfo.textContent = `Showing ${startItem}-${endItem} of ${totalItems} items`;
+                }
+            }
+        }
+
+        // Update pagination controls
+        function updatePaginationControls(currentPage, totalPages) {
+            updateIncidentsPagination();
+        }
+        
+        function updateIncidentsPagination() {
+            const filteredData = getFilteredData();
+            const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+            const pagination = document.getElementById('incidentsPagination');
+            
+            if (!pagination) return;
+            
+            pagination.innerHTML = '';
+            
+            // Previous button
+            const prevLi = document.createElement('li');
+            prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
+            prevLi.innerHTML = `<a class="page-link" href="#" onclick="goToPreviousPage(); return false;" ${currentPage === 1 ? 'tabindex="-1"' : ''}>Previous</a>`;
+            pagination.appendChild(prevLi);
+            
+            // Page numbers
+            const maxVisiblePages = 5;
+            let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+            let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+            
+            if (endPage - startPage + 1 < maxVisiblePages) {
+                startPage = Math.max(1, endPage - maxVisiblePages + 1);
+            }
+            
+            // First page if not visible
+            if (startPage > 1) {
+                const firstLi = document.createElement('li');
+                firstLi.className = 'page-item';
+                firstLi.innerHTML = `<a class="page-link" href="#" onclick="goToPage(1); return false;">1</a>`;
+                pagination.appendChild(firstLi);
+                
+                if (startPage > 2) {
+                    const ellipsisLi = document.createElement('li');
+                    ellipsisLi.className = 'page-item disabled';
+                    ellipsisLi.innerHTML = '<span class="page-link">...</span>';
+                    pagination.appendChild(ellipsisLi);
+                }
+            }
+            
+            // Visible page numbers
+            for (let i = startPage; i <= endPage; i++) {
+                const pageLi = document.createElement('li');
+                pageLi.className = `page-item ${i === currentPage ? 'active' : ''}`;
+                pageLi.innerHTML = `<a class="page-link" href="#" onclick="goToPage(${i}); return false;">${i}</a>`;
+                pagination.appendChild(pageLi);
+            }
+            
+            // Last page if not visible
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) {
+                    const ellipsisLi = document.createElement('li');
+                    ellipsisLi.className = 'page-item disabled';
+                    ellipsisLi.innerHTML = '<span class="page-link">...</span>';
+                    pagination.appendChild(ellipsisLi);
+                }
+                
+                const lastLi = document.createElement('li');
+                lastLi.className = 'page-item';
+                lastLi.innerHTML = `<a class="page-link" href="#" onclick="goToPage(${totalPages}); return false;">${totalPages}</a>`;
+                pagination.appendChild(lastLi);
+            }
+            
+            // Next button
+            const nextLi = document.createElement('li');
+            nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
+            nextLi.innerHTML = `<a class="page-link" href="#" onclick="goToNextPage(); return false;" ${currentPage === totalPages ? 'tabindex="-1"' : ''}>Next</a>`;
+            pagination.appendChild(nextLi);
+        }
+        
+        // Go to specific page
+        function goToPage(page) {
+            const filteredData = getFilteredData();
+            const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+            if (page >= 1 && page <= totalPages) {
+                currentPage = page;
+                loadIncidentsData();
+            }
+        }
+
+        // Go to previous page
+        function goToPreviousPage() {
+            if (currentPage > 1) {
+                currentPage--;
+                loadIncidentsData();
+            }
+        }
+
+        // Go to next page
+        function goToNextPage() {
+            const filteredData = getFilteredData();
+            const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+            if (currentPage < totalPages) {
+                currentPage++;
+                loadIncidentsData();
+            }
+        }
+
+        // Get filtered data (helper function)
+        function getFilteredData() {
+            return incidentsData.filter(incident => {
+                // Status filter (multi-select)
+                if (currentFilter.statuses.length > 0 && !currentFilter.statuses.includes(incident.state)) {
+                    return false;
+                }
+
+                // Ageing filter
+                if (currentFilter.ageing !== 'all') {
+                    const age = incident.age;
+                    switch (currentFilter.ageing) {
+                        case '0-1':
+                            if (age > 1) return false;
+                            break;
+                        case '2-3':
+                            if (age < 2 || age > 3) return false;
+                            break;
+                        case '4-7':
+                            if (age < 4 || age > 7) return false;
+                            break;
+                        case '7+':
+                            if (age <= 7) return false;
+                            break;
+                    }
+                }
+
+                // Priority filter
+                if (currentFilter.priority && incident.priority.toString() !== currentFilter.priority) {
+                    return false;
+                }
+
+                // Assignee filter
+                if (currentFilter.assignee && incident.assignee !== currentFilter.assignee) {
+                    return false;
+                }
+
+                // Search filter
+                if (currentFilter.search) {
+                    const searchText = incident.number + ' ' + incident.description + ' ' + incident.assignee;
+                    if (!searchText.toLowerCase().includes(currentFilter.search)) {
+                        return false;
+                    }
+                }
+
+                return true;
+            });
+        }
+
+        // Get age badge class based on age
+        function getAgeBadgeClass(age) {
+            if (age <= 1) return 'bg-success';
+            if (age <= 3) return 'bg-warning';
+            if (age <= 7) return 'bg-danger';
+            return 'bg-dark';
+        }
+
+        // Show incident modal
+        function showIncidentModal(incident) {
+            const modal = document.getElementById('incidentModal');
+            const modalTitle = document.getElementById('modalIncidentNumber');
+            const modalNumber = document.getElementById('modalIncidentNumberValue');
+            const modalStatus = document.getElementById('modalIncidentStatus');
+            const modalCreated = document.getElementById('modalIncidentCreated');
+            const modalAge = document.getElementById('modalIncidentAge');
+            const modalAssignee = document.getElementById('modalIncidentAssignee');
+            const modalPriority = document.getElementById('modalIncidentPriority');
+            const modalShortDesc = document.getElementById('modalIncidentShortDescription');
+            const modalDescription = document.getElementById('modalIncidentDescription');
+            const modalWorkNotes = document.getElementById('modalIncidentWorkNotes');
+            const modalComments = document.getElementById('modalIncidentComments');
+            
+            // Update modal content
+            modalTitle.textContent = `Incident Details - ${incident.number}`;
+            modalNumber.textContent = incident.number;
+            modalStatus.innerHTML = `<span class="badge status-${incident.state.replace('_', '-')}">${incident.state.replace('_', ' ').toUpperCase()}</span>`;
+            modalCreated.textContent = incident.created;
+            modalAge.innerHTML = `<span class="badge ${getAgeBadgeClass(incident.age)}">${incident.age} days</span>`;
+            modalAssignee.textContent = incident.assignee.replace('.', ' ').replace(/\b\w/g, l => l.toUpperCase());
+            modalPriority.innerHTML = `<span class="badge priority-${incident.priority}">Priority ${incident.priority}</span>`;
+            modalShortDesc.textContent = incident.description;
+            
+            // Generate detailed description
+            const detailedDescription = generateDetailedDescription(incident);
+            modalDescription.textContent = detailedDescription;
+            
+            // Generate work notes
+            const workNotes = generateWorkNotes(incident);
+            modalWorkNotes.textContent = workNotes;
+            
+            // Generate comments
+            const comments = generateComments(incident);
+            modalComments.textContent = comments;
+            
+            // Show modal
+            modal.classList.add('show');
+            document.body.style.overflow = 'hidden'; // Prevent background scrolling
+        }
+        
+        // Close incident modal
+        function closeIncidentModal() {
+            const modal = document.getElementById('incidentModal');
+            modal.classList.remove('show');
+            document.body.style.overflow = 'auto'; // Restore scrolling
+        }
+
+        // Show compliance modal
+        function showComplianceModal(compliance) {
+            const modal = document.getElementById('complianceModal');
+            const modalTitle = document.getElementById('modalComplianceId');
+            const modalId = document.getElementById('modalComplianceIdValue');
+            const modalTitle2 = document.getElementById('modalComplianceTitle');
+            const modalStatus = document.getElementById('modalComplianceStatus');
+            const modalPriority = document.getElementById('modalCompliancePriority');
+            const modalAssignee = document.getElementById('modalComplianceAssignee');
+            const modalCreated = document.getElementById('modalComplianceCreated');
+            const modalAge = document.getElementById('modalComplianceAge');
+            const modalDescription = document.getElementById('modalComplianceDescription');
+            const modalCategory = document.getElementById('modalComplianceCategory');
+            
+            // Update modal content
+            modalTitle.textContent = `Compliance Details - ${compliance.id}`;
+            modalId.textContent = compliance.id;
+            modalTitle2.textContent = compliance.title;
+            modalStatus.innerHTML = `<span class="badge status-${compliance.status.toLowerCase().replace(' ', '-')}">${compliance.status}</span>`;
+            modalPriority.innerHTML = `<span class="badge priority-${compliance.priority.toLowerCase()}">${compliance.priority}</span>`;
+            modalAssignee.textContent = compliance.assignee;
+            modalCreated.textContent = compliance.created;
+            modalAge.innerHTML = `<span class="badge ${getAgeBadgeClass(compliance.age)}">${compliance.age} days</span>`;
+            modalDescription.textContent = compliance.description || 'No description available';
+            modalCategory.textContent = compliance.category || 'General';
+            
+            // Show modal
+            modal.classList.add('show');
+            document.body.style.overflow = 'hidden'; // Prevent background scrolling
+        }
+        
+        // Close compliance modal
+        function closeComplianceModal() {
+            const modal = document.getElementById('complianceModal');
+            modal.classList.remove('show');
+            document.body.style.overflow = 'auto'; // Restore scrolling
+        }
+        
+        // Close modal when clicking outside
+        document.addEventListener('click', function(event) {
+            const incidentModal = document.getElementById('incidentModal');
+            const complianceModal = document.getElementById('complianceModal');
+            
+            if (incidentModal.classList.contains('show') && event.target === incidentModal) {
+                closeIncidentModal();
+            }
+            
+            if (complianceModal.classList.contains('show') && event.target === complianceModal) {
+                closeComplianceModal();
+            }
+        });
+        
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                const incidentModal = document.getElementById('incidentModal');
+                const complianceModal = document.getElementById('complianceModal');
+                
+                if (incidentModal.classList.contains('show')) {
+                    closeIncidentModal();
+                }
+                
+                if (complianceModal.classList.contains('show')) {
+                    closeComplianceModal();
+                }
+            }
+        });
+        
+        // Generate detailed description
+        function generateDetailedDescription(incident) {
+            const descriptions = {
+                'open': `This incident was reported on ${incident.created} and is currently in open status. The issue requires immediate attention and investigation to determine the root cause and implement a resolution.`,
+                'in_progress': `This incident is currently being worked on by ${incident.assignee.replace('.', ' ').replace(/\b\w/g, l => l.toUpperCase())}. The team is actively investigating and implementing a solution.`,
+                'waiting': `This incident is currently waiting for additional information or resources. The assigned team member is awaiting input or dependencies to proceed with resolution.`,
+                'resolved': `This incident has been resolved and the solution has been implemented. The issue has been addressed and verified by the technical team.`,
+                'closed': `This incident has been closed after successful resolution and verification. All related tasks have been completed and documented.`
+            };
+            return descriptions[incident.state] || `Incident ${incident.number} is currently in ${incident.state} status.`;
+        }
+        
+        // Generate work notes
+        function generateWorkNotes(incident) {
+            const workNotes = {
+                'open': `Initial assessment completed. Issue identified and assigned to ${incident.assignee.replace('.', ' ').replace(/\b\w/g, l => l.toUpperCase())}. Investigation in progress.`,
+                'in_progress': `Working on resolution. Identified potential root cause. Testing solution approach.`,
+                'waiting': `Awaiting additional information from user. Pending approval for proposed solution.`,
+                'resolved': `Solution implemented successfully. Issue resolved and tested. Ready for user verification.`,
+                'closed': `Incident closed after successful resolution. All documentation updated. Case completed.`
+            };
+            return workNotes[incident.state] || 'No work notes available for this incident.';
+        }
+        
+        // Generate comments
+        function generateComments(incident) {
+            const comments = {
+                'open': `User reported: "${incident.description}" - Priority ${incident.priority} incident created.`,
+                'in_progress': `Technical team is investigating the issue. Updates will be provided as progress is made.`,
+                'waiting': `Waiting for user response or additional information to proceed with resolution.`,
+                'resolved': `Issue has been resolved. Please verify the solution and confirm if the problem is fixed.`,
+                'closed': `Incident closed successfully. Thank you for your patience during the resolution process.`
+            };
+            return comments[incident.state] || 'No comments available for this incident.';
+        }
+        
+        // View incident details (opens URL with incident number)
+        function viewIncident(number) {
+            // Open incident details in new tab with incident number as parameter
+            const url = `/incident/details?number=${encodeURIComponent(number)}`;
+            window.open(url, '_blank');
+        }
+
+       
+
+        // Download incidents report
+        function downloadIncidentsReport() {
+            // Get current filter parameters
+            const formData = new FormData();
+            
+            if (currentFilter.statuses.length > 0) {
+                currentFilter.statuses.forEach(status => {
+                    formData.append('status', status);
+                });
+            }
+            if (currentFilter.ageing !== 'all') {
+                formData.append('ageing', currentFilter.ageing);
+            }
+            if (currentFilter.priority) {
+                formData.append('priority', currentFilter.priority);
+            }
+            if (currentFilter.assignee) {
+                formData.append('assignee', currentFilter.assignee);
+            }
+            if (currentFilter.search) {
+                formData.append('search', currentFilter.search);
+            }
+
+            // Create a form and submit it to open the report in a new tab
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/api/incidents/report';
+            form.target = '_blank';
+            
+            // Add form data as hidden inputs
+            for (let [key, value] of formData.entries()) {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = key;
+                input.value = value;
+                form.appendChild(input);
+            }
+            
+            document.body.appendChild(form);
+            form.submit();
+            document.body.removeChild(form);
+        }
+
+        // Chart variables to store chart instances
+        let priorityMonthChart, priorityYearChart, priority5TrendChart;
+
+        // Load dashboard charts when dashboard content is shown
+        function loadDashboardCharts() {
+            loadPriorityMonthChart();
+            loadPriorityYearChart();
+            loadPriority5TrendChart();
+        }
+
+        // Load Priority Month Chart
+        function loadPriorityMonthChart() {
+            fetch('/api/incidents/charts/priority-month', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                const ctx = document.getElementById('priorityMonthChart').getContext('2d');
+                
+                // Destroy existing chart if it exists
+                if (priorityMonthChart) {
+                    priorityMonthChart.destroy();
+                }
+                
+                priorityMonthChart = new Chart(ctx, {
+                    type: 'pie',
+                    data: {
+                        labels: data.labels,
+                        datasets: [{
+                            data: data.data,
+                            backgroundColor: data.backgroundColor,
+                            borderWidth: 2,
+                            borderColor: '#fff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: data.title,
+                                font: {
+                                    size: 16,
+                                    weight: 'bold'
+                                }
+                            },
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    padding: 20,
+                                    usePointStyle: true
+                                }
+                            }
+                        }
+                    }
+                });
+            })
+            .catch(error => {
+                // Error loading priority month chart
+            });
+        }
+
+        // Load Priority Year Chart
+        function loadPriorityYearChart() {
+            fetch('/api/incidents/charts/priority-year', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                const ctx = document.getElementById('priorityYearChart').getContext('2d');
+                
+                // Destroy existing chart if it exists
+                if (priorityYearChart) {
+                    priorityYearChart.destroy();
+                }
+                
+                priorityYearChart = new Chart(ctx, {
+                    type: 'pie',
+                    data: {
+                        labels: data.labels,
+                        datasets: [{
+                            data: data.data,
+                            backgroundColor: data.backgroundColor,
+                            borderWidth: 2,
+                            borderColor: '#fff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: data.title,
+                                font: {
+                                    size: 16,
+                                    weight: 'bold'
+                                }
+                            },
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    padding: 20,
+                                    usePointStyle: true
+                                }
+                            }
+                        }
+                    }
+                });
+            })
+            .catch(error => {
+                // Error loading priority year chart
+            });
+        }
+
+        // Load Priority 5 Trend Chart
+        function loadPriority5TrendChart() {
+            fetch('/api/incidents/charts/priority5-trend', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                const ctx = document.getElementById('priority5TrendChart').getContext('2d');
+                
+                // Destroy existing chart if it exists
+                if (priority5TrendChart) {
+                    priority5TrendChart.destroy();
+                }
+                
+                priority5TrendChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: data.labels,
+                        datasets: [{
+                            label: 'Priority 5 Incidents',
+                            data: data.data,
+                            backgroundColor: data.backgroundColor,
+                            borderColor: data.borderColor,
+                            borderWidth: 2,
+                            borderRadius: 4,
+                            borderSkipped: false,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: data.title,
+                                font: {
+                                    size: 16,
+                                    weight: 'bold'
+                                }
+                            },
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Number of Incidents'
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Month'
+                                }
+                            }
+                        }
+                    }
+                });
+            })
+            .catch(error => {
+                // Error loading priority 5 trend chart
+            });
+        }
+
+        // Generate email report
+        function generateEmailReport() {
+            // Create a form and submit it to open the email report in a new tab
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/api/incidents/email-report';
+            form.target = '_blank';
+            
+            document.body.appendChild(form);
+            form.submit();
+            document.body.removeChild(form);
+        }
+
+        // Shutdown application
+        function shutdownApplication() {
+            if (confirm('Are you sure you want to shutdown the application? This will stop the server.')) {
+                fetch('/api/shutdown', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Application shutdown initiated. The server will stop in a few seconds.');
+                    } else {
+                        alert('Shutdown failed: ' + (data.error || 'Unknown error'));
+                    }
+                })
+                .catch(error => {
+                    alert('Error initiating shutdown');
+                });
+            }
+        }
+
+        // Load charts when dashboard is shown
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load charts initially if dashboard is visible
+            if (document.getElementById('dashboardContent').style.display !== 'none') {
+                loadDashboardCharts();
+            }
+        });
+
+        // ===== COMPLIANCE FUNCTIONALITY =====
+        // Compliance variables
+        let complianceData = [];
+        let filteredComplianceData = [];
+        let complianceCurrentPage = 1;
+        let complianceItemsPerPage = 10;
+        let complianceSortColumn = 'created';
+        let complianceSortDirection = 'desc';
+        let complianceCurrentTab = 'all';
+        // Removed selectedComplianceItems - no longer using checkbox selections
+        let selectedComplianceTabs = new Set(['all']); // Track multiple selected tabs
+        let currentComplianceFilter = {
+            status: 'all',
+            priority: '',
+            assignee: '',
+            search: '',
+            dateFrom: '',
+            dateTo: ''
+        };
+
+        // Initialize compliance data when compliance tab is shown
+        function initializeComplianceData() {
+            if (document.getElementById('complianceContent').style.display !== 'none') {
+                // Set Total tab as selected by default
+                selectedComplianceTabs.clear();
+                selectedComplianceTabs.add('all');
+                
+                // Update UI to show Total tab as active
+                document.querySelectorAll('#complianceMetrics .count-card').forEach(card => {
+                    card.classList.remove('active');
+                });
+                const totalCard = document.querySelector('#complianceMetrics .count-card[onclick*="all"]');
+                if (totalCard) {
+                    totalCard.classList.add('active');
+                }
+                
+                loadComplianceDataForSelectedTabs();
+            }
+        }
+
+        // Load compliance data from API
+        function loadComplianceData() {
+            const formData = new FormData();
+            formData.append('tab', 'all');
+            
+            fetch('/api/compliance/list', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                complianceData = data.items || [];
+                populateComplianceAssigneeFilter();
+                applyComplianceFilters();
+            })
+            .catch(error => {
+                // Error loading compliance data
+            });
+        }
+
+        // Load compliance data for multiple selected tabs
+        function loadComplianceDataForSelectedTabs() {
+            if (selectedComplianceTabs.has('all')) {
+                // If Total is selected, load all data
+                loadComplianceData();
+                return;
+            }
+
+            // Load data for each selected tab and combine
+            const promises = Array.from(selectedComplianceTabs).map(tab => {
+                const formData = new FormData();
+                formData.append('tab', tab);
+                
+                return fetch('/api/compliance/list', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => data.items || []);
+            });
+
+            Promise.all(promises)
+                .then(results => {
+                    // Combine all results and remove duplicates
+                    const combinedData = [];
+                    const seenIds = new Set();
+                    
+                    results.forEach(items => {
+                        items.forEach(item => {
+                            if (!seenIds.has(item.id)) {
+                                seenIds.add(item.id);
+                                combinedData.push(item);
+                            }
+                        });
+                    });
+                    
+                    complianceData = combinedData;
+                    populateComplianceAssigneeFilter();
+                    applyComplianceFilters();
+                })
+                .catch(error => {
+                    // Error loading compliance data for selected tabs
+                });
+        }
+
+        // Filter compliance by status with advanced tab selection
+        function filterByComplianceStatus(status) {
+            const clickedCard = event.target.closest('.count-card');
+            
+            if (status === 'all') {
+                // Total tab clicked - clear all other selections and select only Total
+                selectedComplianceTabs.clear();
+                selectedComplianceTabs.add('all');
+                
+                // Update UI
+                document.querySelectorAll('#complianceMetrics .count-card').forEach(card => {
+                    card.classList.remove('active');
+                });
+                clickedCard.classList.add('active');
+            } else {
+                // Other tab clicked - remove Total if selected, then toggle this tab
+                if (selectedComplianceTabs.has('all')) {
+                    selectedComplianceTabs.delete('all');
+                    document.querySelector('#complianceMetrics .count-card[onclick*="all"]').classList.remove('active');
+                }
+                
+                // Toggle the clicked tab
+                if (selectedComplianceTabs.has(status)) {
+                    selectedComplianceTabs.delete(status);
+                    clickedCard.classList.remove('active');
+                } else {
+                    selectedComplianceTabs.add(status);
+                    clickedCard.classList.add('active');
+                }
+                
+                // If no tabs selected, default back to Total
+                if (selectedComplianceTabs.size === 0) {
+                    selectedComplianceTabs.add('all');
+                    document.querySelector('#complianceMetrics .count-card[onclick*="all"]').classList.add('active');
+                }
+            }
+            
+            complianceCurrentPage = 1;
+            loadComplianceDataForSelectedTabs();
+        }
+
+        // Sort compliance data
+        function sortComplianceData() {
+            filteredComplianceData.sort((a, b) => {
+                let aVal = a[complianceSortColumn];
+                let bVal = b[complianceSortColumn];
+                
+                if (complianceSortColumn === 'age') {
+                    aVal = parseInt(aVal);
+                    bVal = parseInt(bVal);
+                } else if (complianceSortColumn === 'created') {
+                    aVal = new Date(aVal);
+                    bVal = new Date(bVal);
+                } else {
+                    aVal = String(aVal).toLowerCase();
+                    bVal = String(bVal).toLowerCase();
+                }
+                
+                if (aVal < bVal) return complianceSortDirection === 'asc' ? -1 : 1;
+                if (aVal > bVal) return complianceSortDirection === 'asc' ? 1 : -1;
+                return 0;
+            });
+        }
+
+        // Sort compliance table
+        function sortComplianceTable(column) {
+            if (complianceSortColumn === column) {
+                complianceSortDirection = complianceSortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                complianceSortColumn = column;
+                complianceSortDirection = 'asc';
+            }
+            
+            // Update sort icons
+            document.querySelectorAll('#complianceTableBody').closest('table').querySelectorAll('.sort-icon').forEach(icon => {
+                icon.className = 'fas fa-sort sort-icon';
+            });
+            
+            const currentIcon = document.querySelector(`th[data-column="${column}"] .sort-icon`);
+            if (currentIcon) {
+                currentIcon.className = `fas fa-sort-${complianceSortDirection === 'asc' ? 'up' : 'down'} sort-icon`;
+            }
+            
+            sortComplianceData();
+            renderComplianceTable();
+        }
+
+        // Render compliance table
+        function renderComplianceTable() {
+            const tbody = document.getElementById('complianceTableBody');
+            const startIndex = (complianceCurrentPage - 1) * complianceItemsPerPage;
+            const endIndex = startIndex + complianceItemsPerPage;
+            const pageData = filteredComplianceData.slice(startIndex, endIndex);
+            
+            tbody.innerHTML = '';
+            
+            if (pageData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted" style="height: 400px; vertical-align: middle;">No compliance items found matching the current filters.</td></tr>';
+                updateCompliancePaginationInfo(0, 0, 0);
+                updateCompliancePaginationControls(1, 1);
+                return;
+            }
+            
+            // Don't auto-select items - let users manually select what they want
+            
+            pageData.forEach(item => {
+                const row = document.createElement('tr');
+                row.className = 'compliance-row';
+                row.style.cursor = 'pointer';
+                row.onclick = () => showComplianceModal(item);
+                
+                // Remove selection logic
+                
+                row.innerHTML = `
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <strong>${item.id}</strong>
+                        </div>
+                    </td>
+                    <td>${item.title}</td>
+                    <td><span class="badge priority-${item.priority.toLowerCase()}">${item.priority}</span></td>
+                    <td><span class="badge status-${item.status.toLowerCase().replace(' ', '-')}">${item.status.replace('_', ' ').toUpperCase()}</span></td>
+                    <td>${item.assignee}</td>
+                    <td>${item.created}</td>
+                    <td><span class="badge ${getAgeBadgeClass(item.age)}">${item.age}</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary" onclick="event.stopPropagation();" title="View Details">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+            
+            // Update pagination info and controls
+            const startItem = (complianceCurrentPage - 1) * complianceItemsPerPage + 1;
+            const endItem = Math.min(complianceCurrentPage * complianceItemsPerPage, filteredComplianceData.length);
+            const totalItems = filteredComplianceData.length;
+            const totalPages = Math.ceil(totalItems / complianceItemsPerPage);
+            
+            updateCompliancePaginationInfo(startItem, endItem, totalItems);
+            updateCompliancePaginationControls(complianceCurrentPage, totalPages);
+        }
+
+        // Apply compliance filters
+        function applyComplianceFilters() {
+            filteredComplianceData = complianceData.filter(item => {
+                let matches = true;
+                
+                if (currentComplianceFilter.priority && item.priority !== currentComplianceFilter.priority) {
+                    matches = false;
+                }
+                
+                if (currentComplianceFilter.assignee && item.assignee !== currentComplianceFilter.assignee) {
+                    matches = false;
+                }
+                
+                if (currentComplianceFilter.search) {
+                    const searchTerm = currentComplianceFilter.search.toLowerCase();
+                    matches = matches && (
+                        item.id.toLowerCase().includes(searchTerm) ||
+                        item.title.toLowerCase().includes(searchTerm) ||
+                        item.description.toLowerCase().includes(searchTerm) ||
+                        item.assignee.toLowerCase().includes(searchTerm)
+                    );
+                }
+                
+                return matches;
+            });
+            
+            sortComplianceData();
+            renderComplianceTable();
+        }
+
+
+        function updateCompliancePagination() {
+            const filteredData = getFilteredComplianceData();
+            const totalPages = Math.ceil(filteredData.length / complianceItemsPerPage);
+            const pagination = document.getElementById('compliancePagination');
+            
+            if (!pagination) return;
+            
+            pagination.innerHTML = '';
+            
+            if (totalPages <= 1) {
+                return; // Don't show pagination for single page
+            }
+            
+            // Previous button
+            const prevLi = document.createElement('li');
+            prevLi.className = `page-item ${complianceCurrentPage === 1 ? 'disabled' : ''}`;
+            prevLi.innerHTML = `<a class="page-link" href="#" onclick="goToCompliancePreviousPage(); return false;" ${complianceCurrentPage === 1 ? 'tabindex="-1"' : ''}>Previous</a>`;
+            pagination.appendChild(prevLi);
+            
+            // Page numbers
+            const maxVisiblePages = 5;
+            let startPage = Math.max(1, complianceCurrentPage - Math.floor(maxVisiblePages / 2));
+            let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+            
+            if (endPage - startPage + 1 < maxVisiblePages) {
+                startPage = Math.max(1, endPage - maxVisiblePages + 1);
+            }
+            
+            // First page if not visible
+            if (startPage > 1) {
+                const firstLi = document.createElement('li');
+                firstLi.className = 'page-item';
+                firstLi.innerHTML = `<a class="page-link" href="#" onclick="goToCompliancePage(1); return false;">1</a>`;
+                pagination.appendChild(firstLi);
+                
+                if (startPage > 2) {
+                    const ellipsisLi = document.createElement('li');
+                    ellipsisLi.className = 'page-item disabled';
+                    ellipsisLi.innerHTML = '<span class="page-link">...</span>';
+                    pagination.appendChild(ellipsisLi);
+                }
+            }
+            
+            // Visible page numbers
+            for (let i = startPage; i <= endPage; i++) {
+                const pageLi = document.createElement('li');
+                pageLi.className = `page-item ${i === complianceCurrentPage ? 'active' : ''}`;
+                pageLi.innerHTML = `<a class="page-link" href="#" onclick="goToCompliancePage(${i}); return false;">${i}</a>`;
+                pagination.appendChild(pageLi);
+            }
+            
+            // Last page if not visible
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) {
+                    const ellipsisLi = document.createElement('li');
+                    ellipsisLi.className = 'page-item disabled';
+                    ellipsisLi.innerHTML = '<span class="page-link">...</span>';
+                    pagination.appendChild(ellipsisLi);
+                }
+                
+                const lastLi = document.createElement('li');
+                lastLi.className = 'page-item';
+                lastLi.innerHTML = `<a class="page-link" href="#" onclick="goToCompliancePage(${totalPages}); return false;">${totalPages}</a>`;
+                pagination.appendChild(lastLi);
+            }
+            
+            // Next button
+            const nextLi = document.createElement('li');
+            nextLi.className = `page-item ${complianceCurrentPage === totalPages ? 'disabled' : ''}`;
+            nextLi.innerHTML = `<a class="page-link" href="#" onclick="goToComplianceNextPage(); return false;" ${complianceCurrentPage === totalPages ? 'tabindex="-1"' : ''}>Next</a>`;
+            pagination.appendChild(nextLi);
+        }
+
+        // Reset compliance filters
+        function resetComplianceFilters() {
+            currentComplianceFilter = {
+                status: 'all',
+                priority: '',
+                assignee: '',
+                search: ''
+            };
+            
+            document.getElementById('compliancePriorityFilter').value = '';
+            document.getElementById('complianceAssigneeFilter').value = '';
+            document.getElementById('complianceSearchInput').value = '';
+            
+            // Reset active status card
+            document.querySelectorAll('#complianceMetrics .count-card').forEach(card => {
+                card.classList.remove('active');
+            });
+            document.querySelector('#complianceMetrics .count-card[onclick*="all"]').classList.add('active');
+            
+            complianceCurrentPage = 1;
+            loadComplianceData();
+        }
+
+        // Handle compliance filter changes
+        document.addEventListener('DOMContentLoaded', function() {
+            const compliancePriorityFilter = document.getElementById('compliancePriorityFilter');
+            const complianceAssigneeFilter = document.getElementById('complianceAssigneeFilter');
+            const complianceSearchInput = document.getElementById('complianceSearchInput');
+            
+            // Initialize email escalated count
+            updateEmailEscalatedCount();
+            
+            if (compliancePriorityFilter) {
+                compliancePriorityFilter.addEventListener('change', function() {
+                    currentComplianceFilter.priority = this.value;
+                    complianceCurrentPage = 1;
+                    applyComplianceFilters();
+                });
+            }
+            
+            if (complianceAssigneeFilter) {
+                complianceAssigneeFilter.addEventListener('change', function() {
+                    currentComplianceFilter.assignee = this.value;
+                    complianceCurrentPage = 1;
+                    applyComplianceFilters();
+                });
+            }
+            
+            if (complianceSearchInput) {
+                complianceSearchInput.addEventListener('keyup', function() {
+                    currentComplianceFilter.search = this.value;
+                    complianceCurrentPage = 1;
+                    applyComplianceFilters();
+                });
+            }
+        });
+
+        // View compliance details
+        function viewComplianceDetails(id) {
+            // Find the compliance item by ID
+            const complianceItem = complianceData.find(item => item.id === id);
+            if (complianceItem) {
+                showComplianceModal(complianceItem);
+            }
+        }
+
+        // Download compliance report
+        function downloadComplianceReport() {
+            const selectionCriteria = getActiveSelectionCriteria();
+            
+            const formData = new FormData();
+            formData.append('reportType', 'Compliance Dashboard Report');
+            formData.append('selectionCriteria', selectionCriteria);
+            // No selectedItems - always use all items from active tab
+            
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/api/compliance/report';
+            form.target = '_blank';
+            
+            for (let [key, value] of formData.entries()) {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = key;
+                input.value = value;
+                form.appendChild(input);
+            }
+            
+            document.body.appendChild(form);
+            form.submit();
+            document.body.removeChild(form);
+        }
+
+        // Generate compliance email report
+        function generateComplianceEmailReport() {
+            const selectionCriteria = getActiveSelectionCriteria();
+            const formData = new FormData();
+            
+            formData.append('selectionCriteria', selectionCriteria);
+            // No selectedItems - always use all items from active tab
+
+            fetch('/api/compliance/email-report', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.text())
+            .then(html => {
+                const newWindow = window.open('', '_blank');
+                newWindow.document.write(html);
+                newWindow.document.close();
+            })
+            .catch(error => {
+                alert('Error generating email report');
+            });
+        }
+
+        // Removed checkbox selection functions - no longer needed
+
+        // Email Escalated Modal Functions
+        let modalSelectedItems = new Set();
+        let searchResults = [];
+
+        // Open email escalated modal
+        function openEmailEscalatedModal() {
+            const modal = new bootstrap.Modal(document.getElementById('emailEscalatedModal'));
+            modal.show();
+            
+            // Clear search input and results
+            document.getElementById('modalSearchInput').value = '';
+            document.getElementById('searchResultsSection').style.display = 'none';
+            modalSelectedItems.clear();
+            
+            // Load current email escalated items
+            loadCurrentEscalatedItems();
+        }
+
+        // Search compliance items in modal
+        function searchComplianceItems() {
+            const query = document.getElementById('modalSearchInput').value.trim();
+            
+            if (query.length < 1) {
+                document.getElementById('searchResultsSection').style.display = 'none';
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('query', query);
+
+            fetch('/api/compliance/search', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert('Error: ' + data.error);
+                    if (data.redirect) {
+                        window.location.href = data.redirect;
+                    }
+                    return;
+                }
+                
+                searchResults = data.items || [];
+                renderSearchResults();
+            })
+            .catch(error => {
+                alert('Error searching compliance items');
+            });
+        }
+
+        // Render search results in modal
+        function renderSearchResults() {
+            const tbody = document.getElementById('searchResultsBody');
+            const resultsSection = document.getElementById('searchResultsSection');
+            const resultsInfo = document.getElementById('searchResultsInfo');
+            
+            tbody.innerHTML = '';
+            
+            if (searchResults.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No results found</td></tr>';
+                resultsInfo.textContent = '0 results found';
+            } else {
+                searchResults.forEach(item => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>
+                            <input type="checkbox" class="form-check-input" 
+                                   onchange="toggleModalSelection('${item.id}')" 
+                                   id="modal_${item.id}">
+                        </td>
+                        <td><strong>${item.id}</strong></td>
+                        <td>${item.title}</td>
+                        <td><span class="badge priority-${item.priority.toLowerCase()}">${item.priority}</span></td>
+                        <td>${item.assignee}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+                resultsInfo.textContent = `${searchResults.length} result(s) found`;
+            }
+            
+            resultsSection.style.display = 'block';
+            updateModalSelectionUI();
+        }
+
+        // Toggle item selection in modal
+        function toggleModalSelection(itemId) {
+            if (modalSelectedItems.has(itemId)) {
+                modalSelectedItems.delete(itemId);
+            } else {
+                modalSelectedItems.add(itemId);
+            }
+            updateModalSelectionUI();
+        }
+
+        // Update modal selection UI
+        function updateModalSelectionUI() {
+            const selectedCount = modalSelectedItems.size;
+            const addBtn = document.getElementById('addSelectedBtn');
+            const countSpan = document.getElementById('selectedCount');
+            
+            countSpan.textContent = selectedCount;
+            addBtn.disabled = selectedCount === 0;
+        }
+
+        // Add selected items to email escalated list
+        function addSelectedItems() {
+            if (modalSelectedItems.size === 0) {
+                return;
+            }
+
+            const formData = new FormData();
+            modalSelectedItems.forEach(itemId => {
+                formData.append('itemIds', itemId);
+            });
+
+            fetch('/api/compliance/email-escalated/add', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert('Error: ' + data.error);
+                    if (data.redirect) {
+                        window.location.href = data.redirect;
+                    }
+                    return;
+                }
+                
+                // Clear selections and refresh current list
+                modalSelectedItems.clear();
+                document.querySelectorAll('#searchResultsBody input[type="checkbox"]').forEach(cb => {
+                    cb.checked = false;
+                });
+                updateModalSelectionUI();
+                
+                // Reload current escalated items
+                loadCurrentEscalatedItems();
+                
+                // Update the count in the main page
+                updateEmailEscalatedCount();
+            })
+            .catch(error => {
+                alert('Error adding items to email escalated list');
+            });
+        }
+
+        // Load current email escalated items
+        function loadCurrentEscalatedItems() {
+            fetch('/api/compliance/email-escalated/list')
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    return;
+                }
+                
+                renderCurrentEscalatedItems(data.items || []);
+                document.getElementById('currentEscalatedInfo').textContent = 
+                    `${data.total || 0} item(s) in email escalated list`;
+            })
+            .catch(error => {
+                // Error loading current escalated items
+            });
+        }
+
+        // Render current escalated items
+        function renderCurrentEscalatedItems(items) {
+            const tbody = document.getElementById('currentEscalatedBody');
+            tbody.innerHTML = '';
+            
+            if (items.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No items in email escalated list</td></tr>';
+                return;
+            }
+            
+            items.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>
+                        <button class="btn btn-sm btn-outline-danger" 
+                                onclick="removeEscalatedItem('${item.id}')" 
+                                title="Remove from list">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </td>
+                    <td><strong>${item.id}</strong></td>
+                    <td>${item.title}</td>
+                    <td><span class="badge priority-${item.priority.toLowerCase()}">${item.priority}</span></td>
+                    <td>${item.assignee}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Remove item from email escalated list
+        function removeEscalatedItem(itemId) {
+            const formData = new FormData();
+            formData.append('itemIds', itemId);
+
+            fetch('/api/compliance/email-escalated/remove', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert('Error: ' + data.error);
+                    if (data.redirect) {
+                        window.location.href = data.redirect;
+                    }
+                    return;
+                }
+                
+                // Reload current escalated items
+                loadCurrentEscalatedItems();
+                
+                // Update the count in the main page
+                updateEmailEscalatedCount();
+            })
+            .catch(error => {
+                alert('Error removing item from email escalated list');
+            });
+        }
+
+        // Update email escalated count on main page
+        function updateEmailEscalatedCount() {
+            fetch('/api/compliance/email-escalated/list')
+            .then(response => response.json())
+            .then(data => {
+                if (!data.error) {
+                    document.getElementById('emailEscalatedCount').textContent = data.total || 0;
+                }
+            })
+            .catch(error => {
+                // Error updating count
+            });
+        }
+
+        // Get active selection criteria for reports
+        function getActiveSelectionCriteria() {
+            if (selectedComplianceTabs.has('all')) {
+                return 'all';
+            } else if (selectedComplianceTabs.size > 1) {
+                // Multiple tabs selected - return comma-separated list
+                return Array.from(selectedComplianceTabs).join(',');
+            } else if (selectedComplianceTabs.has('email_escalated')) {
+                return 'email_escalated';
+            } else if (selectedComplianceTabs.has('escalated')) {
+                return 'escalated';
+            } else if (selectedComplianceTabs.has('nreca')) {
+                return 'nreca';
+            } else if (selectedComplianceTabs.size > 0) {
+                // Return the first selected tab if single selection
+                return Array.from(selectedComplianceTabs)[0];
+            } else {
+                return 'all'; // Default fallback
+            }
+        }
+
+        // Refresh compliance data (called when modal closes)
+        function refreshComplianceData() {
+            updateEmailEscalatedCount();
+            // Reload the compliance table maintaining current tab selection
+            loadComplianceDataForSelectedTabs();
+        }
+
+
+        // Compliance pagination functions (copied from incidents and adapted)
+        function goToCompliancePage(page) {
+            const filteredData = getFilteredComplianceData();
+            const totalPages = Math.ceil(filteredData.length / complianceItemsPerPage);
+            if (page >= 1 && page <= totalPages) {
+                complianceCurrentPage = page;
+                renderComplianceTable();
+            }
+        }
+
+        function goToCompliancePreviousPage() {
+            if (complianceCurrentPage > 1) {
+                complianceCurrentPage--;
+                renderComplianceTable();
+            }
+        }
+
+        function goToComplianceNextPage() {
+            const filteredData = getFilteredComplianceData();
+            const totalPages = Math.ceil(filteredData.length / complianceItemsPerPage);
+            if (complianceCurrentPage < totalPages) {
+                complianceCurrentPage++;
+                renderComplianceTable();
+            }
+        }
+
+        function getFilteredComplianceData() {
+            return filteredComplianceData;
+        }
+
+        function updateCompliancePaginationControls(currentPage, totalPages) {
+            updateCompliancePagination();
+        }
+        
+        function updateCompliancePagination() {
+            const filteredData = getFilteredComplianceData();
+            const totalPages = Math.ceil(filteredData.length / complianceItemsPerPage);
+            const pagination = document.getElementById('compliancePagination');
+            
+            if (!pagination) return;
+            
+            pagination.innerHTML = '';
+            
+            // Previous button
+            const prevLi = document.createElement('li');
+            prevLi.className = `page-item ${complianceCurrentPage === 1 ? 'disabled' : ''}`;
+            prevLi.innerHTML = `<a class="page-link" href="#" onclick="goToCompliancePreviousPage(); return false;" ${complianceCurrentPage === 1 ? 'tabindex="-1"' : ''}>Previous</a>`;
+            pagination.appendChild(prevLi);
+            
+            // Page numbers
+            const maxVisiblePages = 5;
+            let startPage = Math.max(1, complianceCurrentPage - Math.floor(maxVisiblePages / 2));
+            let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+            
+            if (endPage - startPage + 1 < maxVisiblePages) {
+                startPage = Math.max(1, endPage - maxVisiblePages + 1);
+            }
+            
+            // First page if not visible
+            if (startPage > 1) {
+                const firstLi = document.createElement('li');
+                firstLi.className = 'page-item';
+                firstLi.innerHTML = `<a class="page-link" href="#" onclick="goToCompliancePage(1); return false;">1</a>`;
+                pagination.appendChild(firstLi);
+                
+                if (startPage > 2) {
+                    const ellipsisLi = document.createElement('li');
+                    ellipsisLi.className = 'page-item disabled';
+                    ellipsisLi.innerHTML = '<span class="page-link">...</span>';
+                    pagination.appendChild(ellipsisLi);
+                }
+            }
+            
+            // Visible page numbers
+            for (let i = startPage; i <= endPage; i++) {
+                const pageLi = document.createElement('li');
+                pageLi.className = `page-item ${i === complianceCurrentPage ? 'active' : ''}`;
+                pageLi.innerHTML = `<a class="page-link" href="#" onclick="goToCompliancePage(${i}); return false;">${i}</a>`;
+                pagination.appendChild(pageLi);
+            }
+            
+            // Last page if not visible
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) {
+                    const ellipsisLi = document.createElement('li');
+                    ellipsisLi.className = 'page-item disabled';
+                    ellipsisLi.innerHTML = '<span class="page-link">...</span>';
+                    pagination.appendChild(ellipsisLi);
+                }
+                
+                const lastLi = document.createElement('li');
+                lastLi.className = 'page-item';
+                lastLi.innerHTML = `<a class="page-link" href="#" onclick="goToCompliancePage(${totalPages}); return false;">${totalPages}</a>`;
+                pagination.appendChild(lastLi);
+            }
+            
+            // Next button
+            const nextLi = document.createElement('li');
+            nextLi.className = `page-item ${complianceCurrentPage === totalPages ? 'disabled' : ''}`;
+            nextLi.innerHTML = `<a class="page-link" href="#" onclick="goToComplianceNextPage(); return false;" ${complianceCurrentPage === totalPages ? 'tabindex="-1"' : ''}>Next</a>`;
+            pagination.appendChild(nextLi);
+        }
+
+        function updateCompliancePaginationInfo(startItem, endItem, totalItems) {
+            const paginationInfo = document.getElementById('compliancePaginationInfo');
+            if (paginationInfo) {
+                if (totalItems === 0) {
+                    paginationInfo.textContent = 'Showing 0 of 0 items';
+                } else {
+                    paginationInfo.textContent = `Showing ${startItem}-${endItem} of ${totalItems} items`;
+                }
+            }
+        }
+
+        // Populate assignee filter dropdown from backend data
+        function populateComplianceAssigneeFilter() {
+            const assigneeFilter = document.getElementById('complianceAssigneeFilter');
+            if (!assigneeFilter || !complianceData) return;
+            
+            // Get unique assignees from the data
+            const uniqueAssignees = [...new Set(complianceData.map(item => item.assignee))].sort();
+            
+            // Clear existing options except "All Assignees"
+            assigneeFilter.innerHTML = '<option value="">All Assignees</option>';
+            
+            // Add options for each unique assignee
+            uniqueAssignees.forEach(assignee => {
+                if (assignee) {
+                    const option = document.createElement('option');
+                    option.value = assignee;
+                    option.textContent = assignee;
+                    assigneeFilter.appendChild(option);
+                }
+            });
+        }
+
+    </script>
+</body>
+</html>
