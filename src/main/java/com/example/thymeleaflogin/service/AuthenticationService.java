@@ -15,6 +15,8 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Base64;
 import java.util.UUID;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
 public class AuthenticationService {
@@ -79,7 +81,30 @@ public class AuthenticationService {
                 tokenService.storeToken(accessToken, loginRequest.getUsername(), accessExpiresIn, ipAddress, authorization);
                 tokenService.storeRefreshToken(refreshToken, loginRequest.getUsername(), refreshExpiresIn, ipAddress, authorization);
 
-                return new AuthResponse(accessToken, accessExpiresIn, refreshToken, refreshExpiresIn, "Authentication successful", true);
+                // Attempt to parse fullname from external API response JSON
+                String fullname = null;
+                try {
+                    ObjectMapper mapper = new ObjectMapper();
+                    JsonNode node = mapper.readTree(response);
+                    if (node != null) {
+                        if (node.hasNonNull("fullname")) {
+                            fullname = node.get("fullname").asText();
+                        } else if (node.hasNonNull("fullName")) {
+                            fullname = node.get("fullName").asText();
+                        } else if (node.hasNonNull("name")) {
+                            fullname = node.get("name").asText();
+                        }
+                    }
+                } catch (Exception ignored) {
+                    // Ignore parsing errors and fallback to username
+                }
+                if (fullname == null || fullname.isBlank()) {
+                    fullname = loginRequest.getUsername();
+                }
+
+                AuthResponse auth = new AuthResponse(accessToken, accessExpiresIn, refreshToken, refreshExpiresIn, "Authentication successful", true);
+                auth.setFullname(fullname);
+                return auth;
             } else {
                 return new AuthResponse(null, "Invalid credentials", false, 0);
             }

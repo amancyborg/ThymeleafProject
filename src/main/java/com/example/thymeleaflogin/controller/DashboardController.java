@@ -20,6 +20,7 @@ public class DashboardController {
     public String dashboard(Model model, HttpServletRequest request, HttpSession session) {
         String token = (String) session.getAttribute("authToken");
         String username = (String) session.getAttribute("username");
+        String fullname = (String) session.getAttribute("fullname");
         String clientIpAddress = IpAddressUtil.getClientIpAddress(request);
 
         // Check if token is valid for the current user and IP
@@ -28,6 +29,7 @@ public class DashboardController {
         }
 
         model.addAttribute("username", username);
+        model.addAttribute("fullname", fullname);
         model.addAttribute("token", token);
         
         return "dashboard";

@@ -69,6 +69,7 @@ public class ApiController {
     public ResponseEntity<Map<String, Object>> getUserInfo(HttpServletRequest request, HttpSession session) {
         String token = (String) session.getAttribute("authToken");
         String username = (String) session.getAttribute("username");
+        String fullname = (String) session.getAttribute("fullname");
         String clientIpAddress = IpAddressUtil.getClientIpAddress(request);
 
         // Check if token is valid and belongs to the session user and IP
@@ -81,6 +82,7 @@ public class ApiController {
 
         Map<String, Object> response = new HashMap<>();
         response.put("username", username);
+        response.put("fullname", fullname);
         response.put("token", token);
         response.put("sessionId", session.getId());
         response.put("timestamp", System.currentTimeMillis());
@@ -125,6 +127,7 @@ public class ApiController {
                 // Store authentication data in session
                 session.setAttribute("authToken", authResponse.getToken());
                 session.setAttribute("username", loginRequest.getUsername());
+                session.setAttribute("fullname", authResponse.getFullname());
 
                 // Set refresh token as HttpOnly cookie
                 if (authResponse.getRefreshToken() != null) {

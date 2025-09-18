@@ -8,6 +8,7 @@ public class AuthResponse {
     private boolean success;
     private long expiresIn;
     private long refreshExpiresIn;
+    private String fullname;
 
     public AuthResponse() {}
 
@@ -74,5 +75,14 @@ public class AuthResponse {
     public void setRefreshExpiresIn(long refreshExpiresIn) {
         this.refreshExpiresIn = refreshExpiresIn;
     }
+
+    public String getFullname() {
+        return fullname;
+    }
+
+    public void setFullname(String fullname) {
+        this.fullname = fullname;
+    }
 }
+
 

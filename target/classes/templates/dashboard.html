@@ -944,7 +944,7 @@
             <div class="navbar-nav ms-auto">
                 <span class="navbar-text me-3">
                     <i class="fas fa-user me-1"></i>
-                    Welcome, <strong th:text="${username}"></strong>
+                    Welcome, <strong th:text="${fullname}?:${username}"></strong>
                 </span>
                 <button class="btn btn-outline-light btn-sm me-2" onclick="shutdownApplication()" title="Shutdown Application">
                     <i class="fas fa-power-off me-1"></i>
