@@ -18,25 +18,37 @@ public class TokenService {
 
     public void storeToken(String token, String username, long expiresInSeconds) {
         LocalDateTime expirationTime = LocalDateTime.now().plusSeconds(expiresInSeconds);
-        TokenInfo tokenInfo = new TokenInfo(username, expirationTime, null);
+        TokenInfo tokenInfo = new TokenInfo(username, expirationTime, null, null);
         tokenStorage.put(token, tokenInfo);
     }
 
     public void storeToken(String token, String username, long expiresInSeconds, String ipAddress) {
         LocalDateTime expirationTime = LocalDateTime.now().plusSeconds(expiresInSeconds);
-        TokenInfo tokenInfo = new TokenInfo(username, expirationTime, ipAddress);
+        TokenInfo tokenInfo = new TokenInfo(username, expirationTime, ipAddress, null);
+        tokenStorage.put(token, tokenInfo);
+    }
+
+    public void storeToken(String token, String username, long expiresInSeconds, String ipAddress, String authorization) {
+        LocalDateTime expirationTime = LocalDateTime.now().plusSeconds(expiresInSeconds);
+        TokenInfo tokenInfo = new TokenInfo(username, expirationTime, ipAddress, authorization);
         tokenStorage.put(token, tokenInfo);
     }
 
     public void storeRefreshToken(String refreshToken, String username, long expiresInSeconds) {
         LocalDateTime expirationTime = LocalDateTime.now().plusSeconds(expiresInSeconds);
-        TokenInfo tokenInfo = new TokenInfo(username, expirationTime, null);
+        TokenInfo tokenInfo = new TokenInfo(username, expirationTime, null, null);
         refreshTokenStorage.put(refreshToken, tokenInfo);
     }
 
     public void storeRefreshToken(String refreshToken, String username, long expiresInSeconds, String ipAddress) {
         LocalDateTime expirationTime = LocalDateTime.now().plusSeconds(expiresInSeconds);
-        TokenInfo tokenInfo = new TokenInfo(username, expirationTime, ipAddress);
+        TokenInfo tokenInfo = new TokenInfo(username, expirationTime, ipAddress, null);
+        refreshTokenStorage.put(refreshToken, tokenInfo);
+    }
+
+    public void storeRefreshToken(String refreshToken, String username, long expiresInSeconds, String ipAddress, String authorization) {
+        LocalDateTime expirationTime = LocalDateTime.now().plusSeconds(expiresInSeconds);
+        TokenInfo tokenInfo = new TokenInfo(username, expirationTime, ipAddress, authorization);
         refreshTokenStorage.put(refreshToken, tokenInfo);
     }
 
@@ -169,6 +181,22 @@ public class TokenService {
         return null;
     }
 
+    public String getAuthorizationFromToken(String token) {
+        TokenInfo tokenInfo = tokenStorage.get(token);
+        if (tokenInfo != null && isTokenValid(token)) {
+            return tokenInfo.getAuthorization();
+        }
+        return null;
+    }
+
+    public String getAuthorizationFromRefreshToken(String refreshToken) {
+        TokenInfo tokenInfo = refreshTokenStorage.get(refreshToken);
+        if (tokenInfo != null && isRefreshTokenValid(refreshToken)) {
+            return tokenInfo.getAuthorization();
+        }
+        return null;
+    }
+
     public void removeToken(String token) {
         tokenStorage.remove(token);
     }
@@ -191,11 +219,13 @@ public class TokenService {
         private final String username;
         private final LocalDateTime expirationTime;
         private final String ipAddress;
+        private final String authorization;
 
-        public TokenInfo(String username, LocalDateTime expirationTime, String ipAddress) {
+        public TokenInfo(String username, LocalDateTime expirationTime, String ipAddress, String authorization) {
             this.username = username;
             this.expirationTime = expirationTime;
             this.ipAddress = ipAddress;
+            this.authorization = authorization;
         }
 
         public String getUsername() {
@@ -208,6 +238,10 @@ public class TokenService {
 
         public String getIpAddress() {
             return ipAddress;
+        }
+
+        public String getAuthorization() {
+            return authorization;
         }
     }
 }

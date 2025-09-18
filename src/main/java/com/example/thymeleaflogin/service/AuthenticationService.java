@@ -57,11 +57,12 @@ public class AuthenticationService {
             String credentials = loginRequest.getUsername() + ":" + loginRequest.getPassword();
             String encodedCredentials = Base64.getEncoder()
                     .encodeToString(credentials.getBytes(StandardCharsets.UTF_8));
+            String authorization = "Basic " + encodedCredentials;
 
             // Make API call with base64 encoded credentials
             String response = webClient.get()
                     .uri("/posts/1")
-                    .header(HttpHeaders.AUTHORIZATION, "Basic " + encodedCredentials)
+                    .header(HttpHeaders.AUTHORIZATION, authorization)
                     .retrieve()
                     .bodyToMono(String.class)
                     .timeout(Duration.ofMillis(timeout))
@@ -74,9 +75,9 @@ public class AuthenticationService {
                 long accessExpiresIn = accessTokenExpiry;
                 long refreshExpiresIn = refreshTokenExpiry;
 
-                // Store tokens
-                tokenService.storeToken(accessToken, loginRequest.getUsername(), accessExpiresIn, ipAddress);
-                tokenService.storeRefreshToken(refreshToken, loginRequest.getUsername(), refreshExpiresIn, ipAddress);
+                // Store tokens with authorization and optional IP
+                tokenService.storeToken(accessToken, loginRequest.getUsername(), accessExpiresIn, ipAddress, authorization);
+                tokenService.storeRefreshToken(refreshToken, loginRequest.getUsername(), refreshExpiresIn, ipAddress, authorization);
 
                 return new AuthResponse(accessToken, accessExpiresIn, refreshToken, refreshExpiresIn, "Authentication successful", true);
             } else {
@@ -121,13 +122,16 @@ public class AuthenticationService {
             return new AuthResponse(null, "Invalid refresh token", false, 0);
         }
 
+        // Carry over authorization from the existing refresh token
+        String authorization = tokenService.getAuthorizationFromRefreshToken(refreshToken);
+
         // Issue new access token and rotate refresh token
         String newAccessToken = generateToken();
         String newRefreshToken = generateRefreshToken();
         long accessExpiresIn = accessTokenExpiry;
         long refreshExpiresIn = refreshTokenExpiry;
-        tokenService.storeToken(newAccessToken, username, accessExpiresIn, ipAddress);
-        tokenService.storeRefreshToken(newRefreshToken, username, refreshExpiresIn, ipAddress);
+        tokenService.storeToken(newAccessToken, username, accessExpiresIn, ipAddress, authorization);
+        tokenService.storeRefreshToken(newRefreshToken, username, refreshExpiresIn, ipAddress, authorization);
         tokenService.removeRefreshToken(refreshToken);
 
         return new AuthResponse(newAccessToken, accessExpiresIn, newRefreshToken, refreshExpiresIn, "Token refreshed", true);
@@ -141,12 +145,15 @@ public class AuthenticationService {
 
         String username = tokenService.getUsernameFromRefreshToken(refreshToken);
 
+        // Carry over authorization from the existing refresh token
+        String authorization = tokenService.getAuthorizationFromRefreshToken(refreshToken);
+
         String newAccessToken = generateToken();
         String newRefreshToken = generateRefreshToken();
         long accessExpiresIn = accessTokenExpiry;
         long refreshExpiresIn = refreshTokenExpiry;
-        tokenService.storeToken(newAccessToken, username, accessExpiresIn, ipAddress);
-        tokenService.storeRefreshToken(newRefreshToken, username, refreshExpiresIn, ipAddress);
+        tokenService.storeToken(newAccessToken, username, accessExpiresIn, ipAddress, authorization);
+        tokenService.storeRefreshToken(newRefreshToken, username, refreshExpiresIn, ipAddress, authorization);
         tokenService.removeRefreshToken(refreshToken);
 
         return new AuthResponse(newAccessToken, accessExpiresIn, newRefreshToken, refreshExpiresIn, "Token refreshed", true);

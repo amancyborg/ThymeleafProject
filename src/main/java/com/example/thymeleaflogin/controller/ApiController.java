@@ -114,20 +114,24 @@ public class ApiController {
 
     
     @PostMapping("/login")
-    public ResponseEntity<Map<String, Object>> login(@RequestBody LoginRequest loginRequest, HttpSession session, HttpServletRequest request) {
+    public ResponseEntity<Map<String, Object>> login(@RequestBody LoginRequest loginRequest, HttpSession session, HttpServletRequest request, HttpServletResponse httpResponse) {
         Map<String, Object> response = new HashMap<>();
         
         try {
-            AuthResponse authResponse = authenticationService.authenticate(loginRequest);
+            String clientIpAddress = IpAddressUtil.getClientIpAddress(request);
+            AuthResponse authResponse = authenticationService.authenticate(loginRequest, clientIpAddress);
             
             if (authResponse.isSuccess()) {
                 // Store authentication data in session
                 session.setAttribute("authToken", authResponse.getToken());
                 session.setAttribute("username", loginRequest.getUsername());
-                
-                // Store token with user and IP information
-                String clientIpAddress = IpAddressUtil.getClientIpAddress(request);
-                tokenService.storeToken(authResponse.getToken(), loginRequest.getUsername(), 1800L, clientIpAddress);
+
+                // Set refresh token as HttpOnly cookie
+                if (authResponse.getRefreshToken() != null) {
+                    String cookie = "refreshToken=" + authResponse.getRefreshToken() + 
+                            "; Path=/; HttpOnly; Secure; SameSite=Lax";
+                    httpResponse.addHeader("Set-Cookie", cookie);
+                }
                 
                 response.put("success", true);
                 response.put("message", "Authentication successful");
