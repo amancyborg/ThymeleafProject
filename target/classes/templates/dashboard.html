@@ -1061,7 +1061,7 @@
                                                     <i class="fas fa-list-alt"></i>
                                                 </div>
                                             </div>
-                                            <div class="count-number">26</div>
+                                            <div class="count-number" id="complianceTotalCount">26</div>
                                             <div class="count-label">Total</div>
                                         </div>
                                     </div>
@@ -1239,7 +1239,7 @@
                                                     <i class="fas fa-list-alt"></i>
                                                 </div>
                                             </div>
-                                            <div class="count-number">26</div>
+                                            <div class="count-number" id="totalCount">26</div>
                                             <div class="count-label">Total</div>
                                         </div>
                                     </div>
@@ -1252,7 +1252,7 @@
                                                     <i class="fas fa-exclamation-circle"></i>
                                                 </div>
                                             </div>
-                                            <div class="count-number">8</div>
+                                            <div class="count-number" id="openCount">8</div>
                                             <div class="count-label">Open</div>
                                         </div>
                                     </div>
@@ -1265,7 +1265,7 @@
                                                     <i class="fas fa-spinner"></i>
                                                 </div>
                                             </div>
-                                            <div class="count-number">6</div>
+                                            <div class="count-number" id="inProgressCount">6</div>
                                             <div class="count-label">In Progress</div>
                                         </div>
                                     </div>
@@ -1278,7 +1278,7 @@
                                                     <i class="fas fa-clock"></i>
                                                 </div>
                                             </div>
-                                            <div class="count-number">5</div>
+                                            <div class="count-number" id="waitingCount">5</div>
                                             <div class="count-label">Waiting</div>
                                         </div>
                                     </div>
@@ -1291,7 +1291,7 @@
                                                     <i class="fas fa-check-circle"></i>
                                                 </div>
                                             </div>
-                                            <div class="count-number">4</div>
+                                            <div class="count-number" id="resolvedCount">4</div>
                                             <div class="count-label">Resolved</div>
                                         </div>
                                     </div>
@@ -1304,7 +1304,7 @@
                                                     <i class="fas fa-times-circle"></i>
                                                 </div>
                                             </div>
-                                            <div class="count-number">3</div>
+                                            <div class="count-number" id="closedCount">3</div>
                                             <div class="count-label">Closed</div>
                                         </div>
                                     </div>
@@ -1321,7 +1321,7 @@
                                                     <i class="fas fa-clock"></i>
                                                 </div>
                                             </div>
-                                            <div class="count-number">2</div>
+                                            <div class="count-number" id="ageing01Count">2</div>
                                             <div class="count-label">0-1 Days</div>
                                         </div>
                                     </div>
@@ -1334,7 +1334,7 @@
                                                     <i class="fas fa-hourglass-half"></i>
                                                 </div>
                                             </div>
-                                            <div class="count-number">3</div>
+                                            <div class="count-number" id="ageing23Count">3</div>
                                             <div class="count-label">2-3 Days</div>
                                         </div>
                                     </div>
@@ -1347,7 +1347,7 @@
                                                     <i class="fas fa-exclamation-triangle"></i>
                                                 </div>
                                             </div>
-                                            <div class="count-number">4</div>
+                                            <div class="count-number" id="ageing47Count">4</div>
                                             <div class="count-label">4-7 Days</div>
                                         </div>
                                     </div>
@@ -1360,7 +1360,7 @@
                                                     <i class="fas fa-fire"></i>
                                                 </div>
                                             </div>
-                                            <div class="count-number">17</div>
+                                            <div class="count-number" id="ageing7plusCount">17</div>
                                             <div class="count-label">7+ Days</div>
                                         </div>
                                     </div>
@@ -1727,40 +1727,79 @@
                 });
         }, 300000); // 5 minutes
 
-        // Sample ServiceNow incidents data
-        const incidentsData = [
-            { number: 'INC0012345', description: 'Database connection timeout affecting user login', priority: 1, state: 'open', assignee: 'john.doe', created: '2024-01-15', age: 2 },
-            { number: 'INC0012346', description: 'Email notifications not being sent', priority: 2, state: 'in_progress', assignee: 'jane.smith', created: '2024-01-14', age: 3 },
-            { number: 'INC0012347', description: 'Application performance degradation', priority: 1, state: 'waiting', assignee: 'mike.johnson', created: '2024-01-13', age: 4 },
-            { number: 'INC0012348', description: 'User unable to access reports module', priority: 3, state: 'resolved', assignee: 'sarah.wilson', created: '2024-01-12', age: 5 },
-            { number: 'INC0012349', description: 'Scheduled job failing intermittently', priority: 2, state: 'open', assignee: 'john.doe', created: '2024-01-11', age: 6 },
-            { number: 'INC0012350', description: 'Login page loading slowly', priority: 3, state: 'in_progress', assignee: 'jane.smith', created: '2024-01-10', age: 7 },
-            { number: 'INC0012351', description: 'Data export functionality not working', priority: 4, state: 'closed', assignee: 'mike.johnson', created: '2024-01-09', age: 8 },
-            { number: 'INC0012352', description: 'Security vulnerability in user management', priority: 1, state: 'open', assignee: 'sarah.wilson', created: '2024-01-08', age: 9 },
-            { number: 'INC0012353', description: 'Backup process taking too long', priority: 2, state: 'waiting', assignee: 'john.doe', created: '2024-01-07', age: 10 },
-            { number: 'INC0012354', description: 'Mobile app not syncing data', priority: 3, state: 'resolved', assignee: 'jane.smith', created: '2024-01-06', age: 11 },
-            { number: 'INC0012355', description: 'API rate limiting too restrictive', priority: 2, state: 'in_progress', assignee: 'mike.johnson', created: '2024-01-05', age: 12 },
-            { number: 'INC0012356', description: 'User profile images not displaying', priority: 4, state: 'open', assignee: 'sarah.wilson', created: '2024-01-04', age: 13 },
-            { number: 'INC0012357', description: 'Server memory usage exceeding 90%', priority: 1, state: 'open', assignee: 'john.doe', created: '2024-01-03', age: 14 },
-            { number: 'INC0012358', description: 'SSL certificate expiring in 30 days', priority: 2, state: 'in_progress', assignee: 'jane.smith', created: '2024-01-02', age: 15 },
-            { number: 'INC0012359', description: 'User authentication failing for LDAP users', priority: 1, state: 'waiting', assignee: 'mike.johnson', created: '2024-01-01', age: 16 },
-            { number: 'INC0012360', description: 'Dashboard widgets not loading properly', priority: 3, state: 'resolved', assignee: 'sarah.wilson', created: '2023-12-31', age: 17 },
-            { number: 'INC0012361', description: 'File upload size limit too restrictive', priority: 4, state: 'closed', assignee: 'john.doe', created: '2023-12-30', age: 18 },
-            { number: 'INC0012362', description: 'Database backup job failing', priority: 2, state: 'open', assignee: 'jane.smith', created: '2023-12-29', age: 19 },
-            { number: 'INC0012363', description: 'Email server not responding', priority: 1, state: 'in_progress', assignee: 'mike.johnson', created: '2023-12-28', age: 20 },
-            { number: 'INC0012364', description: 'User session timeout too short', priority: 3, state: 'waiting', assignee: 'sarah.wilson', created: '2023-12-27', age: 21 },
-            { number: 'INC0012365', description: 'Report generation taking too long', priority: 2, state: 'resolved', assignee: 'john.doe', created: '2023-12-26', age: 22 },
-            { number: 'INC0012366', description: 'Mobile app crashing on iOS devices', priority: 1, state: 'open', assignee: 'jane.smith', created: '2023-12-25', age: 23 },
-            { number: 'INC0012367', description: 'API endpoint returning 500 errors', priority: 2, state: 'in_progress', assignee: 'mike.johnson', created: '2023-12-24', age: 24 },
-            { number: 'INC0012368', description: 'User permissions not working correctly', priority: 3, state: 'closed', assignee: 'sarah.wilson', created: '2023-12-23', age: 25 },
-            { number: 'INC0012369', description: 'System logs consuming too much disk space', priority: 4, state: 'open', assignee: 'john.doe', created: '2023-12-22', age: 26 },
-            { number: 'INC0012370', description: 'Third-party integration API changes', priority: 2, state: 'waiting', assignee: 'jane.smith', created: '2023-12-21', age: 27 }
-        ];
+        // Incidents data will be loaded from backend API
+        let incidentsData = [];
 
         let currentFilter = { statuses: [], ageing: 'all', priority: '', assignee: '', search: '' };
         let currentSort = { column: null, direction: 'asc' };
         let currentPage = 1;
         let itemsPerPage = 10;
+
+        // Load status metrics from backend
+        function loadIncidentStats() {
+            fetch('/api/incidents/stats', { method: 'POST' })
+                .then(res => res.json())
+                .then(stats => {
+                    if (stats && !stats.error) {
+                        const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+                        setText('totalCount', stats.total ?? '0');
+                        setText('openCount', stats.open ?? '0');
+                        setText('inProgressCount', stats.in_progress ?? '0');
+                        setText('waitingCount', stats.waiting ?? '0');
+                        setText('resolvedCount', stats.resolved ?? '0');
+                        setText('closedCount', stats.closed ?? '0');
+                    }
+                })
+                .catch(() => {
+                    // Fallback to compute from incidentsData if available
+                    updateStatusCountsFromData();
+                });
+        }
+
+        function updateStatusCountsFromData() {
+            const totals = incidentsData.reduce((acc, it) => { acc.total++; acc[it.state] = (acc[it.state]||0)+1; return acc; }, { total: 0 });
+            const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+            setText('totalCount', totals.total || 0);
+            setText('openCount', totals.open || 0);
+            setText('inProgressCount', totals.in_progress || 0);
+            setText('waitingCount', totals.waiting || 0);
+            setText('resolvedCount', totals.resolved || 0);
+            setText('closedCount', totals.closed || 0);
+        }
+
+        function updateAgeingCountsFromData() {
+            let a01 = 0, a23 = 0, a47 = 0, a7p = 0;
+            incidentsData.forEach(it => {
+                const age = parseInt(it.age, 10);
+                if (age <= 1) a01++; else if (age <= 3) a23++; else if (age <= 7) a47++; else a7p++;
+            });
+            const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+            setText('ageing01Count', a01);
+            setText('ageing23Count', a23);
+            setText('ageing47Count', a47);
+            setText('ageing7plusCount', a7p);
+        }
+
+        function fetchIncidentsFromApi() {
+            // Fetch all incidents for the user/session; client-side filters will be applied locally
+            fetch('/api/incidents/list', { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data && !data.error) {
+                        incidentsData = Array.isArray(data.incidents) ? data.incidents : [];
+                        updateAgeingCountsFromData();
+                        // If stats endpoint failed earlier, ensure counts are populated
+                        updateStatusCountsFromData();
+                        loadIncidentsData();
+                    } else if (data && data.redirect) {
+                        window.location.href = data.redirect;
+                    }
+                })
+                .catch(() => {
+                    // Keep incidentsData as is on error
+                    loadIncidentsData();
+                });
+        }
 
         // Sort functionality
         function sortTable(column) {
@@ -2116,7 +2155,9 @@
                 // Reset pagination to page 1
                 currentPage = 1;
                 
-                applyFilters();
+                // Load stats and incidents from backend, then render
+                loadIncidentStats();
+                fetchIncidentsFromApi();
             }
         }
 
