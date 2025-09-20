@@ -14,6 +14,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -63,6 +64,29 @@ public class ApiController {
         }
 
         return ResponseEntity.ok(refreshResponse);
+    }
+
+    @GetMapping("/assignees")
+    public ResponseEntity<Map<String, List<String>>> getAssignees(HttpServletRequest request, HttpSession session) {
+        String token = (String) session.getAttribute("authToken");
+        String username = (String) session.getAttribute("username");
+        String clientIpAddress = IpAddressUtil.getClientIpAddress(request);
+
+        if (token == null || !tokenService.isTokenValidForUserAndIp(token, username, clientIpAddress)) {
+            return ResponseEntity.status(401).body(null);
+        }
+
+        Map<String, List<String>> assigneeMap = new HashMap<>();
+        assigneeMap.put("Onshore", List.of(
+                "John Doe",
+                "Jane Smith"
+        ));
+        assigneeMap.put("Offshore", List.of(
+                "Mike Johnson",
+                "Sarah Wilson"
+        ));
+
+        return ResponseEntity.ok(assigneeMap);
     }
 
     @GetMapping("/user-info")

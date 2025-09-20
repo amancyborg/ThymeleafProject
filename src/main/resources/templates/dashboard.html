@@ -12,6 +12,96 @@
             background-color: #f8f9fa;
             overflow-x: hidden; /* Hide horizontal scrollbar */
         }
+        /*TOGGLEADD*/
+        /* 3-way pill toggle styles for Assignee location (icon-only) */
+        .assignee-toggle {
+            position: relative;
+            display: inline-flex;
+            vertical-align: middle;
+            width: 110px;
+            height: 44px;
+            border-radius: 999px;
+            overflow: hidden;
+            user-select: none;
+            box-shadow: 0 8px 22px rgba(0,0,0,0.18);
+        }
+        .assignee-toggle .toggle-track {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 14px;
+            pointer-events: auto;
+        }
+        .assignee-toggle .segment {
+            position: relative;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            width: 13px;
+        }
+        .assignee-toggle .segment i { color: #fff; opacity: 0.9; font-size: 1.1rem; transition: opacity 0.2s ease, transform 0.2s ease; }
+
+        /* Background states to match reference */
+        .assignee-toggle.position-left {
+            background: linear-gradient(135deg, #d32f2f 0%, #b71c1c 100%);
+        }
+        .assignee-toggle.position-middle {
+            background: linear-gradient(90deg, #d32f2f 0%, #b71c1c 50%, #29b6f6 50%, #0288d1 100%);
+        }
+        .assignee-toggle.position-right {
+            background: linear-gradient(135deg, #29b6f6 0%, #0288d1 100%);
+        }
+
+        /* Icon visibility per state
+           - middle: both icons visible
+           - left selected: show RIGHT icon (house), dim LEFT icon (plane)
+           - right selected: show LEFT icon (plane), dim RIGHT icon (house)
+        */
+        .assignee-toggle .segment.left i { opacity: 0.6; transform: translateX(1px); }
+        .assignee-toggle .segment.right i { opacity: 0.6; transform: translateX(-1px); }
+        /* Left position: emphasize right icon, dim left */
+        .assignee-toggle.position-left .segment.left i { opacity: 0.15; transform: translateX(0) scale(1.0); }
+        .assignee-toggle.position-left .segment.right i { opacity: 1; transform: translateX(0) scale(1.05); }
+        /* Right position: emphasize left icon, dim right */
+        .assignee-toggle.position-right .segment.right i { opacity: 0.15; transform: translateX(0) scale(1.0); }
+        .assignee-toggle.position-right .segment.left i { opacity: 1; transform: translateX(0) scale(1.05); }
+
+        .assignee-toggle .toggle-knob {
+            position: absolute;
+            top: 3px;
+            width: 38px;
+            height: 38px;
+            background: #f4f4f4;
+            border-radius: 50%;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.28);
+            transition: left 0.25s ease-in-out;
+        }
+        .assignee-toggle .toggle-knob::after {
+            content: "";
+            position: absolute;
+            inset: 7px;
+            border-radius: 50%;
+            border: 4px solid rgba(0,0,0,0.06);
+        }
+        .assignee-toggle .toggle-knob::before {
+            content: "";
+            position: absolute;
+            top: 4px;
+            left: 8px;
+            right: 8px;
+            height: 10px;
+            border-radius: 999px;
+            background: linear-gradient(180deg, rgba(255,255,255,0.85), rgba(255,255,255,0.2));
+            filter: blur(0.2px);
+        }
+        .assignee-toggle.position-left .toggle-knob { left: 4px; }
+        .assignee-toggle.position-middle .toggle-knob { left: calc(50% - 19px); }
+        .assignee-toggle.position-right .toggle-knob { left: calc(100% - 42px); }
+        /*TOGGLEADD*/
         .navbar {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
@@ -871,11 +961,7 @@
         .sidebar-fixed.collapsed .sidebar-nav-icon {
             margin-right: 0;
         }
-        
-        .sidebar-fixed.collapsed .sidebar-nav-item {
-            text-align: center;
-        }
-        
+
         /* Responsive adjustments */
         @media (max-width: 767.98px) {
             .sidebar-fixed {
@@ -885,7 +971,6 @@
                 width: 100%;
                 padding: 1rem;
             }
-            
             .main-content-fixed {
                 margin-left: 0;
                 width: 100%;
@@ -1368,8 +1453,9 @@
                             </div>
 
                             <!-- Filter Controls -->
+                            /*TOGGLEADD*/
                             <div class="row mb-4">
-                                <div class="col-md-4">
+                                <div class="col-md-3">
                                     <label for="priorityFilter" class="form-label">Priority</label>
                                     <select class="form-select" id="priorityFilter" onchange="applyFilters()">
                                         <option value="">All Priorities</option>
@@ -1379,27 +1465,35 @@
                                         <option value="4">4 - Low</option>
                                     </select>
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-md-3">
                                     <label for="assigneeFilter" class="form-label">Assignee</label>
                                     <select class="form-select" id="assigneeFilter" onchange="applyFilters()">
                                         <option value="">All Assignees</option>
-                                        <option value="john.doe">John Doe</option>
-                                        <option value="jane.smith">Jane Smith</option>
-                                        <option value="mike.johnson">Mike Johnson</option>
-                                        <option value="sarah.wilson">Sarah Wilson</option>
                                     </select>
                                 </div>
                                 <div class="col-md-3">
                                     <label for="searchInput" class="form-label">Search</label>
                                     <input type="text" class="form-control" id="searchInput" placeholder="Search incidents..." onkeyup="applyFilters()">
                                 </div>
-                                <div class="col-md-1 d-flex align-items-end">
-                                    <button class="btn btn-outline-secondary w-100" onclick="resetFilters()" title="Reset all filters">
+                                <!-- Toggle placed to the left of Reset button -->
+                               
+                                <div class="col-md-1 d-flex align-items-end pe-0">
+                                    <button class="btn btn-outline-secondary" onclick="resetFilters()" title="Reset all filters">
                                         <i class="fas fa-undo"></i>
                                     </button>
                                 </div>
+                                <div class="col-md-2 d-flex align-items-end justify-content-start ps-0">
+                                    <div class="assignee-toggle position-middle" id="assigneeLocationToggle" title="Assignee location">
+                                        <div class="toggle-track">
+                                            <div class="segment left" data-value="onshore"><i class="fas fa-plane-departure"></i></div>
+                                            <div class="segment middle" data-value="all"></div>
+                                            <div class="segment right" data-value="offshore"><i class="fas fa-house"></i></div>
+                                        </div>
+                                        <div class="toggle-knob"></div>
+                                    </div>
+                                </div>
                             </div>
-
+                            /*TOGGLEADD*/
                             <!-- Incidents List -->
                             <div class="incidents-table-container">
                                 <table class="table table-hover incidents-table">
@@ -1824,7 +1918,106 @@
             // Apply sorting and refresh display
             applyFilters();
         }
+        /*TOGGLEADD*/
+        // Assignee map and toggle handling
+        let assigneeMap = { Onshore: [], Offshore: [] };
+        let currentAssigneeLocation = 'all'; // 'onshore' | 'all' | 'offshore'
 
+        function normalizeAssigneeValue(name) {
+            // Convert "John Doe" => "john.doe"
+            return name
+                .toLowerCase()
+                .trim()
+                .replace(/\s+/g, ' ')
+                .replace(/ /g, '.');
+        }
+
+        function setAssigneeTogglePosition(value) {
+            const toggle = document.getElementById('assigneeLocationToggle');
+            if (!toggle) return;
+            toggle.classList.remove('position-left', 'position-middle', 'position-right');
+            if (value === 'onshore') toggle.classList.add('position-left');
+            else if (value === 'offshore') toggle.classList.add('position-right');
+            else toggle.classList.add('position-middle');
+        }
+
+        function populateAssigneeOptions() {
+            const select = document.getElementById('assigneeFilter');
+            const previous = select.value;
+            // Build list based on toggle
+            let names = [];
+            if (currentAssigneeLocation === 'onshore') {
+                names = assigneeMap.Onshore || [];
+            } else if (currentAssigneeLocation === 'offshore') {
+                names = assigneeMap.Offshore || [];
+            } else {
+                names = [...(assigneeMap.Onshore || []), ...(assigneeMap.Offshore || [])];
+            }
+
+            // Remove all except the first default option
+            select.innerHTML = '<option value="">All Assignees</option>';
+
+            // Append options
+            names.sort((a,b) => a.localeCompare(b)).forEach(name => {
+                const opt = document.createElement('option');
+                opt.value = normalizeAssigneeValue(name);
+                opt.textContent = name;
+                select.appendChild(opt);
+            });
+
+            // Try to keep previous selection if still present
+            const stillExists = Array.from(select.options).some(o => o.value === previous);
+            select.value = stillExists ? previous : '';
+
+            // Re-apply filters when list changes
+            applyFilters();
+        }
+
+        async function loadAssignees() {
+            const select = document.getElementById('assigneeFilter');
+            // Non-blocking: immediately show loading state and return control to UI
+            const original = select.innerHTML;
+            select.disabled = true;
+            select.innerHTML = '<option value="">Loading assignees...</option>';
+
+            // Bind toggle segment clicks once
+            const toggle = document.getElementById('assigneeLocationToggle');
+            if (toggle && !toggle.dataset.bound) {
+                toggle.addEventListener('click', (e) => {
+                    const seg = e.target.closest('.segment');
+                    if (!seg) return;
+                    currentAssigneeLocation = seg.dataset.value;
+                    setAssigneeTogglePosition(currentAssigneeLocation);
+                    populateAssigneeOptions();
+                });
+                toggle.dataset.bound = 'true';
+                // Ensure initial knob position matches default 'all'
+                setAssigneeTogglePosition(currentAssigneeLocation);
+            }
+
+            // Fetch asynchronously
+            fetch('/api/assignees', { credentials: 'same-origin' })
+                .then(res => {
+                    if (res.status === 401) {
+                        window.location.href = '/login';
+                        throw new Error('Unauthorized');
+                    }
+                    return res.json();
+                })
+                .then(data => {
+                    assigneeMap = data || { Onshore: [], Offshore: [] };
+                    populateAssigneeOptions();
+                })
+                .catch(err => {
+                    console.error('Failed to load assignees', err);
+                    // Restore default option on failure
+                    select.innerHTML = '<option value="">All Assignees</option>';
+                })
+                .finally(() => {
+                    select.disabled = false;
+                });
+        }
+        /*TOGGLEADD*/
         // Sidebar toggle functionality
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
@@ -2028,7 +2221,15 @@
             currentFilter.search = '';
             currentFilter.statuses = [];
             currentFilter.ageing = 'all';
-            
+            /*TOGGLEADD*/
+            // Reset assignee location toggle to initial middle ('all')
+            currentAssigneeLocation = 'all';
+            setAssigneeTogglePosition(currentAssigneeLocation);
+            // Rebuild assignee options for 'all' and keep selection cleared
+            if (typeof populateAssigneeOptions === 'function') {
+                populateAssigneeOptions();
+            }
+            /*TOGGLEADD*/
             // Reset pagination
             currentPage = 1;
             
@@ -2055,6 +2256,11 @@
 
         // Load and display incidents data
         function loadIncidentsData() {
+            /*TOGGLEADD*/
+            // Build normalized assignee sets for location-based filtering
+            const onshoreSet = new Set((assigneeMap.Onshore || []).map(normalizeAssigneeValue));
+            const offshoreSet = new Set((assigneeMap.Offshore || []).map(normalizeAssigneeValue));
+            /*TOGGLEADD*/
             let filteredData = incidentsData.filter(incident => {
                 // Status filter (multi-select)
                 if (currentFilter.statuses.length > 0 && !currentFilter.statuses.includes(incident.state)) {
@@ -2085,11 +2291,22 @@
                     return false;
                 }
 
-                // Assignee filter
+                // Assignee filter (explicit selection)
                 if (currentFilter.assignee && incident.assignee !== currentFilter.assignee) {
                     return false;
                 }
-
+                /*TOGGLEADD*/
+                // If no assignee selected, apply location-based filter from the toggle
+                if (!currentFilter.assignee && currentAssigneeLocation !== 'all') {
+                    const assigneeSlug = (incident.assignee || '').toLowerCase();
+                    if (currentAssigneeLocation === 'onshore' && !onshoreSet.has(assigneeSlug)) {
+                        return false;
+                    }
+                    if (currentAssigneeLocation === 'offshore' && !offshoreSet.has(assigneeSlug)) {
+                        return false;
+                    }
+                }
+                /*TOGGLEADD*/
                 // Search filter
                 if (currentFilter.search) {
                     const searchText = incident.number + ' ' + incident.description + ' ' + incident.assignee;
@@ -2155,9 +2372,12 @@
                 // Reset pagination to page 1
                 currentPage = 1;
                 
-                // Load stats and incidents from backend, then render
+                // Load stats, incidents and assignees from backend, then render
                 loadIncidentStats();
                 fetchIncidentsFromApi();
+                /*TOGGLEADD*/
+                loadAssignees();
+                /*TOGGLEADD*/
             }
         }
 
